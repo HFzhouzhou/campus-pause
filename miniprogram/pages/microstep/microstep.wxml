@@ -40,16 +40,32 @@
     </view>
 
     <view
-      class="ios-btn ios-btn-primary {{!promptInput ? 'ios-btn-disabled' : ''}}"
+      class="ios-btn ios-btn-primary {{(!promptInput || isStreaming) ? 'ios-btn-disabled' : ''}}"
       hover-class="tap-active"
       bindtap="onGenerate"
     >
-      拆成 3 个 10 分钟微步骤
+      {{isStreaming ? '正在拆解微行动…' : '拆成 3 个 10 分钟微步骤'}}
+    </view>
+  </view>
+
+  <!-- 实时流式思考/打字机拆解动画卡片 -->
+  <view wx:if="{{isStreaming}}" class="ios-card stream-card">
+    <view class="stream-head">
+      <view class="stream-beacon"></view>
+      <text class="stream-status">{{streamStage}}</text>
+      <text class="stream-pct">{{streamProgress}}%</text>
+    </view>
+    <view class="stream-bar-track">
+      <view class="stream-bar-fill" style="width: {{streamProgress}}%;"></view>
+    </view>
+    <view class="stream-box">
+      <text class="stream-text" space="nbsp">{{streamPreview}}</text>
+      <view class="stream-cursor"></view>
     </view>
   </view>
 
   <!-- 当前拆解结果 -->
-  <view wx:if="{{activePlan}}" class="plan-wrap">
+  <view wx:if="{{!isStreaming && activePlan}}" class="plan-wrap">
     <view class="ios-card empathy-card {{progressPercent === 100 ? 'empathy-card-done' : ''}}">
       <view class="empathy-top">
         <view class="empathy-goal-wrap">
@@ -72,7 +88,7 @@
     <view
       wx:for="{{activePlan.steps}}"
       wx:key="id"
-      class="ios-card step-card {{item.completed ? 'step-done' : ''}}"
+      class="ios-card step-card step-stagger-{{index % 3}} {{item.completed ? 'step-done' : ''}}"
     >
       <view class="step-row">
         <view
@@ -104,14 +120,15 @@
     </view>
   </view>
 
-  <!-- 最近拆解历史 -->
+  <!-- 最近拆解历史（禁用 enable-flex + 明确行高，彻底杜绝横向列表拉伸变形） -->
   <view wx:if="{{history.length > 1}}" class="history-wrap">
     <text class="history-label">最近拆解记录</text>
-    <scroll-view scroll-x enable-flex class="history-scroll" show-scrollbar="{{false}}">
+    <scroll-view scroll-x class="history-scroll" show-scrollbar="{{false}}">
       <view
         wx:for="{{history}}"
         wx:key="id"
         class="history-chip {{activePlan && activePlan.id === item.id ? 'history-chip-active' : ''}}"
+        hover-class="tap-active"
         data-id="{{item.id}}"
         bindtap="onSelectHistory"
       >{{item.prompt}}</view>

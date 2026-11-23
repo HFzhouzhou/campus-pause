@@ -14,13 +14,14 @@
     <text class="header-sub">只陪 30 分钟，到点自动解散，不维系社交关系</text>
   </view>
 
-  <!-- 分类胶囊 + 发起按钮 -->
+  <!-- 分类胶囊 + 发起按钮（禁用 enable-flex + 明确行高，绝不拉伸变形） -->
   <view class="toolbar">
-    <scroll-view scroll-x enable-flex class="cat-scroll" show-scrollbar="{{false}}">
+    <scroll-view scroll-x class="cat-scroll" show-scrollbar="{{false}}">
       <view
         wx:for="{{categories}}"
         wx:key="id"
         class="cat-pill {{activeCategory === item.id ? 'cat-pill-active' : ''}}"
+        hover-class="tap-active"
         data-id="{{item.id}}"
         bindtap="onSelectCategory"
       >{{item.emoji}} {{item.label}}</view>
@@ -95,7 +96,7 @@
         <view class="sheet-close" hover-class="tap-active" bindtap="closeCipher">✕</view>
       </view>
 
-      <scroll-view scroll-y class="sheet-scroll">
+      <scroll-view scroll-y class="cipher-scroll">
         <view class="sheet-inner">
           <view class="wallet-card">
             <view class="wallet-shine"></view>
@@ -131,7 +132,7 @@
       </scroll-view>
 
       <view class="cipher-footer">
-        <scroll-view scroll-x enable-flex class="phrase-scroll" show-scrollbar="{{false}}">
+        <scroll-view scroll-x class="phrase-scroll" show-scrollbar="{{false}}">
           <view
             wx:for="{{quickMessages}}"
             wx:key="*this"

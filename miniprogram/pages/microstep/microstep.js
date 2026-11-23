@@ -19,6 +19,10 @@ Page({
 
     quickScenarios: engine.QUICK_SCENARIOS,
     promptInput: '',
+    isStreaming: false,
+    streamStage: '正在定位任务卡点…',
+    streamProgress: 0,
+    streamPreview: '',
     history: [],
     activePlan: null,
     completedCount: 0,
@@ -61,6 +65,7 @@ Page({
 
   onUnload() {
     if (this._timer) clearInterval(this._timer);
+    if (this._streamTimer) clearInterval(this._streamTimer);
   },
 
   noop() {},
@@ -131,6 +136,7 @@ Page({
   },
 
   onTapScenario(e) {
+    if (this.data.isStreaming) return;
     const text = e.currentTarget.dataset.text;
     this.setData({ promptInput: text });
     this.onGenerate();
@@ -138,13 +144,66 @@ Page({
 
   onGenerate() {
     const prompt = (this.data.promptInput || '').trim();
-    if (!prompt) return;
+    if (!prompt || this.data.isStreaming) return;
     this.requireAuth('拆解 10 分钟微行动并保存进度', () => {
-      wx.vibrateShort({ type: 'medium' });
-      const { plan, history } = engine.createBreakdown(prompt);
-      this.syncPlans(history, plan.id);
-      wx.showToast({ title: '已切分为 3 个 10 分钟微步骤 ✨', icon: 'none' });
+      this.runStreamingBreakdown(prompt);
     });
+  },
+
+  /** 类流式打字机逐字拆解动效（纯本地规则引擎驱动，兼顾仪式感与零备案风险） */
+  runStreamingBreakdown(prompt) {
+    if (this._streamTimer) clearInterval(this._streamTimer);
+    wx.vibrateShort({ type: 'medium' });
+
+    const { plan, history } = engine.createBreakdown(prompt);
+    const fullScript = [
+      `💭 共鸣安抚：${plan.empathyNote}`,
+      `01 · ${plan.steps[0].title}（10 分钟）`,
+      `02 · ${plan.steps[1].title}（10 分钟）`,
+      `03 · ${plan.steps[2].title}（10 分钟）`,
+    ].join('\n');
+
+    let cursor = 0;
+    const totalLen = fullScript.length;
+    this.setData({
+      isStreaming: true,
+      streamStage: '正在识别焦虑卡点…',
+      streamProgress: 10,
+      streamPreview: '',
+    });
+
+    this._streamTimer = setInterval(() => {
+      cursor = Math.min(totalLen, cursor + 3);
+      const ratio = cursor / Math.max(1, totalLen);
+      const pct = Math.min(98, Math.round(12 + ratio * 86));
+      let stage = '正在识别焦虑卡点…';
+      if (ratio > 0.35 && ratio <= 0.72) {
+        stage = '正在切分 3 个 10 分钟微行动…';
+      } else if (ratio > 0.72) {
+        stage = '正在封装专注行动清单…';
+      }
+
+      this.setData({
+        streamPreview: fullScript.slice(0, cursor),
+        streamProgress: pct,
+        streamStage: stage,
+      });
+
+      if (cursor >= totalLen) {
+        clearInterval(this._streamTimer);
+        this._streamTimer = null;
+        setTimeout(() => {
+          this.setData({
+            isStreaming: false,
+            streamProgress: 100,
+            streamPreview: '',
+          });
+          this.syncPlans(history, plan.id);
+          wx.vibrateShort({ type: 'light' });
+          wx.showToast({ title: '已切分为 3 个 10 分钟微步骤 ✨', icon: 'none' });
+        }, 180);
+      }
+    }, 28);
   },
 
   onSelectHistory(e) {

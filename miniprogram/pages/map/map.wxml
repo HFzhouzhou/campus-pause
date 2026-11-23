@@ -65,7 +65,7 @@
     </view>
 
     <!-- 分类筛选胶囊 -->
-    <scroll-view scroll-x enable-flex class="cat-scroll" show-scrollbar="{{false}}">
+    <scroll-view scroll-x class="cat-scroll" show-scrollbar="{{false}}">
       <view
         wx:for="{{categories}}"
         wx:key="id"
@@ -278,7 +278,7 @@
             <view class="ugc-photo-btn">拍照 / 从相册选图</view>
           </view>
 
-          <scroll-view scroll-x enable-flex class="preset-scroll" show-scrollbar="{{false}}">
+          <scroll-view scroll-x class="preset-scroll" show-scrollbar="{{false}}">
             <view
               wx:for="{{presetPhotos}}"
               wx:key="id"
