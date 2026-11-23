@@ -2,13 +2,13 @@
  * 统一本地持久化存储层
  *
  * 【后续迁移至后端 / 微信云开发接口说明】
- * 迁移至微信小程序或独立后端时，只需将各 *Service.ts 中的 readStorage / writeStorage
- * 替换为对应的云数据库调用：
+ * 迁移至微信小程序时，可将以下 localStorage 替换为微信云开发数据库调用，
+ * 并结合 .env.local 中预留的 VITE_AMAP_WX_KEY 接入高德微信小程序 SDK (amap-wx.js)：
  *   - 微信云开发: wx.cloud.database().collection('healing_spots').get() / .add() / .doc(id).update()
  *   - REST API:  fetch(`${API_BASE}/api/spots`, { method: 'GET' | 'POST' })
  */
 
-const PREFIX = 'campus_pause_v1_';
+const PREFIX = 'campus_pause_gxufl_v2_';
 
 export function readStorage<T>(key: string, fallback: T): T {
   try {

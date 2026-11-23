@@ -8,7 +8,7 @@ export const BUDDY_CATEGORIES: {
   label: string;
   emoji: string;
 }[] = [
-  { id: 'all', label: '全部搭子', emoji: '✨' },
+  { id: 'all', label: '全部搭子', emoji: '✦' },
   { id: 'walk', label: '暴走散步', emoji: '🚶' },
   { id: 'eat', label: '干饭不尴尬', emoji: '🍜' },
   { id: 'study', label: '静音监督', emoji: '🎧' },
@@ -27,9 +27,9 @@ function buildInitialBuddies(): BuddyActivity[] {
   return [
     {
       id: 'buddy-1',
-      title: '南操场暴走不说话搭子（30分钟）',
+      title: '田径场暴走不说话搭子（30分钟）',
       category: 'walk',
-      location: '南操场主席台左侧单杠',
+      location: '五合田径场西侧看台入口',
       durationMinutes: 30,
       expiresAt: now + 26 * 60 * 1000,
       maxPeople: 3,
@@ -43,52 +43,52 @@ function buildInitialBuddies(): BuddyActivity[] {
         {
           id: 'qm-1',
           sender: '低电量步行者',
-          text: '我在主席台左边栏杆靠着，到了直接一起开走就好～',
+          text: '我在看台口靠栏杆站着，到了直接一起开走就好～',
           time: '3分钟前',
         },
       ],
     },
     {
       id: 'buddy-2',
-      title: '三食堂干饭不尴尬搭子',
+      title: '食堂干饭不尴尬搭子',
       category: 'eat',
-      location: '三食堂二楼麻辣烫窗口旁',
+      location: '五合食堂二楼靠窗区',
       durationMinutes: 30,
       expiresAt: now + 19 * 60 * 1000,
       maxPeople: 2,
       joinedCount: 1,
       hostAlias: '干饭要紧同学',
-      cipher: '桌角放一瓶乌龙茶',
-      vibeNote: '想吃双人烤鱼或互相帮忙占座，吃饭期间各自刷手机完全 OK，绝不尬聊！',
+      cipher: '桌角放一杯冰柠檬茶',
+      vibeNote: '想互相帮忙占座干饭，吃饭期间各自刷手机完全 OK，绝不尬聊！',
       boundaryTag: '活动结束自动解散 · 不强制加微信',
       isSilent: false,
       quickMessages: [
         {
           id: 'qm-2',
           sender: '干饭要紧同学',
-          text: '我先去占个靠窗二人位，想吃啥窗口直接各自点！',
+          text: '我先去占个二人位，想吃啥窗口直接各自点！',
           time: '5分钟前',
         },
       ],
     },
     {
       id: 'buddy-3',
-      title: '图书馆静音互相监督搭子',
+      title: '五合图书馆静音互相监督搭子',
       category: 'study',
-      location: '新图 3F 东区靠窗长桌',
+      location: '图书馆 4F 靠窗长桌',
       durationMinutes: 30,
       expiresAt: now + 29 * 60 * 1000,
       maxPeople: 4,
       joinedCount: 2,
-      hostAlias: '拖延症克星',
-      cipher: '桌面立一张绿色便利贴',
+      hostAlias: '专四冲刺中',
+      cipher: '桌面立一张薄荷绿便利贴',
       vibeNote: '手机统一反扣桌面 30 分钟，谁也不许偷刷短视频，到点点头收工！',
       boundaryTag: '活动结束自动解散 · 不强制加微信',
       isSilent: true,
       quickMessages: [
         {
           id: 'qm-3',
-          sender: '拖延症克星',
+          sender: '专四冲刺中',
           text: '已经反扣手机进入番茄钟，来了直接坐对面就行。',
           time: '2分钟前',
         },
@@ -96,22 +96,22 @@ function buildInitialBuddies(): BuddyActivity[] {
     },
     {
       id: 'buddy-4',
-      title: '理科楼天台发呆看日落搭子',
+      title: '明德楼连廊发呆看落日搭子',
       category: 'sunset',
-      location: '理科楼 5F 西侧连廊',
+      location: '明德楼西侧观景连廊',
       durationMinutes: 30,
       expiresAt: now + 22 * 60 * 1000,
       maxPeople: 3,
       joinedCount: 1,
-      hostAlias: '橘子海观测员',
+      hostAlias: '南宁晚霞观测员',
       cipher: '拿两杯冰美式（多出来一杯随缘）',
-      vibeNote: '今天云层超适合出晚霞，一个人看有点安静过头，欢迎并排吹风不寒暄。',
+      vibeNote: '今天南宁的云层超适合出橘子海晚霞，欢迎并排吹风不寒暄。',
       boundaryTag: '活动结束自动解散 · 不强制加微信',
       isSilent: true,
       quickMessages: [
         {
           id: 'qm-4',
-          sender: '橘子海观测员',
+          sender: '南宁晚霞观测员',
           text: '风不大，西边天空已经开始泛金黄色了！',
           time: '刚刚',
         },
@@ -119,15 +119,15 @@ function buildInitialBuddies(): BuddyActivity[] {
     },
     {
       id: 'buddy-5',
-      title: '旧图后门喂猫散步 30 分钟',
+      title: '化龙池桥头喂猫散步 30 分钟',
       category: 'walk',
-      location: '旧图书馆后门紫藤架下',
+      location: '化龙池欧式廊桥南头',
       durationMinutes: 30,
       expiresAt: now + 24 * 60 * 1000,
       maxPeople: 2,
       joinedCount: 1,
       hostAlias: '猫条批发商',
-      cipher: '背帆布包挂小鸭子挂件',
+      cipher: '背米色帆布包挂小鸭子挂件',
       vibeNote: '带了半包冻干，找个同样想摸猫充能的人一起蹲大橘，社恐极其友好。',
       boundaryTag: '活动结束自动解散 · 不强制加微信',
       isSilent: false,
@@ -135,7 +135,7 @@ function buildInitialBuddies(): BuddyActivity[] {
         {
           id: 'qm-5',
           sender: '猫条批发商',
-          text: '三花和学分大橘都在紫藤架下面晒肚皮！',
+          text: '三花和大橘都在廊桥树荫下晒太阳！',
           time: '6分钟前',
         },
       ],
@@ -152,7 +152,6 @@ export const buddyService = {
       writeStorage(STORAGE_KEY, fresh);
       return fresh;
     }
-    // 若预置卡片已全部过期，自动刷新倒计时确保随时演示都有鲜活倒计时
     const hasActive = stored.some((b) => b.expiresAt > now + 60 * 1000);
     if (!hasActive) {
       const refreshed = stored.map((b, idx) => ({
@@ -234,7 +233,10 @@ export const buddyService = {
     return { list: next, updated };
   },
 
-  sendQuickMessage(id: string, text: string): { list: BuddyActivity[]; updated?: BuddyActivity } {
+  sendQuickMessage(
+    id: string,
+    text: string
+  ): { list: BuddyActivity[]; updated?: BuddyActivity } {
     let updated: BuddyActivity | undefined;
     const next = this.getAll().map((b) => {
       if (b.id !== id) return b;

@@ -10,15 +10,19 @@
     width: 100%;
     margin: 0;
     padding: 0;
-    background-color: #0b0f19;
-    color: #f1f5f9;
+    background-color: #06080f;
+    color: #f8fafc;
     overflow: hidden;
     overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+      'PingFang SC', 'Hiragino Sans GB', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-/* Custom sleek scrollbars */
+/* Scrollbar utilities */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -28,56 +32,196 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
+  background: rgba(255, 255, 255, 0.16);
   border-radius: 9999px;
 }
 
-/* HUD Glass Panel utility */
+/* ============================================================================
+   Apple iOS 26 / visionOS Liquid Glass Design System (液态玻璃光学材质)
+   ============================================================================ */
+.liquid-glass {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.11) 0%,
+    rgba(255, 255, 255, 0.045) 48%,
+    rgba(255, 255, 255, 0.075) 100%
+  );
+  backdrop-filter: blur(28px) saturate(185%);
+  -webkit-backdrop-filter: blur(28px) saturate(185%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.28),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.06),
+    0 16px 38px -12px rgba(0, 0, 0, 0.58);
+}
+
+.liquid-glass-elevated {
+  background: linear-gradient(
+    160deg,
+    rgba(30, 38, 56, 0.72) 0%,
+    rgba(14, 18, 30, 0.82) 100%
+  );
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.3),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.06),
+    0 24px 60px -14px rgba(0, 0, 0, 0.72);
+}
+
+/* 底部悬浮液态玻璃胶囊导航栏 */
+.liquid-dock {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0.07) 52%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  backdrop-filter: blur(36px) saturate(210%);
+  -webkit-backdrop-filter: blur(36px) saturate(210%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.42),
+    inset 0 -1.5px 2px rgba(255, 255, 255, 0.08),
+    0 20px 44px -8px rgba(0, 0, 0, 0.65),
+    0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+/* 液态玻璃选中态折射透镜 */
+.liquid-lens {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0.12) 60%,
+    rgba(255, 255, 255, 0.18) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.55),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.12),
+    0 4px 16px rgba(0, 0, 0, 0.22);
+}
+
+/* 兼容旧 class 名，平滑升级为苹果液态玻璃 */
 .hud-glass {
-  background: rgba(15, 23, 42, 0.72);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.11) 0%,
+    rgba(18, 24, 38, 0.62) 100%
+  );
+  backdrop-filter: blur(28px) saturate(185%);
+  -webkit-backdrop-filter: blur(28px) saturate(185%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.26),
+    0 12px 32px -10px rgba(0, 0, 0, 0.52);
 }
 
 .hud-glass-strong {
-  background: rgba(11, 15, 25, 0.86);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(
+    155deg,
+    rgba(28, 36, 54, 0.72) 0%,
+    rgba(11, 15, 25, 0.84) 100%
+  );
+  backdrop-filter: blur(36px) saturate(195%);
+  -webkit-backdrop-filter: blur(36px) saturate(195%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.28),
+    0 20px 44px -10px rgba(0, 0, 0, 0.68);
 }
 
-/* Breathing Marker Ring for both AMap HTML markers and Vector Map markers */
+/* ============================================================================
+   Iridescent Floating Soap Bubble (通透虹彩液态泡泡)
+   ============================================================================ */
+.soap-bubble {
+  position: relative;
+  background:
+    radial-gradient(
+      120% 100% at 22% 18%,
+      rgba(255, 255, 255, 0.24) 0%,
+      rgba(255, 255, 255, 0.05) 36%,
+      rgba(255, 255, 255, 0.02) 68%,
+      rgba(255, 255, 255, 0.14) 100%
+    );
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.38),
+    inset 0 -10px 22px rgba(255, 255, 255, 0.06),
+    inset 8px 0 18px rgba(167, 139, 250, 0.14),
+    inset -8px 0 18px rgba(52, 211, 153, 0.14),
+    0 18px 40px -14px rgba(0, 0, 0, 0.62);
+}
+
+.soap-bubble::before {
+  content: '';
+  position: absolute;
+  top: 9%;
+  left: 14%;
+  width: 34%;
+  height: 16%;
+  border-radius: 9999px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(-16deg);
+  pointer-events: none;
+}
+
+@keyframes bubble-float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.animate-bubble-float {
+  animation: bubble-float 4.8s ease-in-out infinite;
+}
+
+/* Apple-style refined breathing pulse ring for map pins */
 @keyframes marker-breathe {
   0%,
   100% {
     transform: scale(1);
-    opacity: 0.75;
+    opacity: 0.65;
   }
   50% {
-    transform: scale(1.42);
-    opacity: 0.15;
+    transform: scale(1.48);
+    opacity: 0.08;
   }
 }
 
 .marker-ring-breathe {
-  animation: marker-breathe 2.6s ease-in-out infinite;
+  animation: marker-breathe 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-/* AMap custom marker reset */
+/* Hide AMap default clunky logo/copyright clutter slightly while staying respectful */
 .amap-marker-label {
   border: none !important;
   background: transparent !important;
 }
+.amap-scale-text {
+  color: rgba(248, 250, 252, 0.72) !important;
+}
+.amap-scale-line div {
+  border-color: rgba(248, 250, 252, 0.55) !important;
+}
 
-/* Safe area padding helper for mobile bottom dock */
 .pb-safe {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
