@@ -3,7 +3,10 @@ const auth = require('./utils/auth');
 App({
   globalData: {
     statusBarHeight: 20,
-    navBarHeight: 64,
+    menuTop: 24,
+    menuHeight: 32,
+    menuRightSpace: 100,
+    navBarTotalHeight: 68,
     user: null,
   },
 
@@ -11,11 +14,28 @@ App({
     try {
       const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
       const statusBarHeight = win.statusBarHeight || 20;
+      const screenWidth = win.windowWidth || 375;
+
+      let menuTop = statusBarHeight + 6;
+      let menuHeight = 32;
+      let menuRightSpace = 104;
+
+      if (wx.getMenuButtonBoundingClientRect) {
+        const rect = wx.getMenuButtonBoundingClientRect();
+        if (rect && rect.height) {
+          menuTop = rect.top;
+          menuHeight = rect.height;
+          menuRightSpace = screenWidth - rect.left + 10;
+        }
+      }
+
       this.globalData.statusBarHeight = statusBarHeight;
-      this.globalData.navBarHeight = statusBarHeight + 44;
+      this.globalData.menuTop = menuTop;
+      this.globalData.menuHeight = menuHeight;
+      this.globalData.menuRightSpace = menuRightSpace;
+      this.globalData.navBarTotalHeight = menuTop + menuHeight + 8;
     } catch (e) {
-      this.globalData.statusBarHeight = 20;
-      this.globalData.navBarHeight = 64;
+      // keep safe defaults
     }
 
     this.globalData.user = auth.getCurrentUser();

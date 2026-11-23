@@ -10,7 +10,9 @@ function formatCountdown(expiresAt, now) {
 
 Page({
   data: {
-    statusBarHeight: 20,
+    menuTop: 24,
+    menuHeight: 32,
+    menuRightSpace: 104,
     user: null,
     authVisible: false,
     authReason: '',
@@ -26,6 +28,7 @@ Page({
 
     activeCipherId: '',
     activeCipherBuddy: null,
+    cipherRemaining: '30:00',
     msgDraft: '',
 
     createVisible: false,
@@ -41,17 +44,18 @@ Page({
 
   onLoad() {
     const app = getApp();
+    const g = (app && app.globalData) || {};
     this.setData({
-      statusBarHeight: (app && app.globalData && app.globalData.statusBarHeight) || 20,
+      menuTop: g.menuTop || 24,
+      menuHeight: g.menuHeight || 32,
+      menuRightSpace: g.menuRightSpace || 104,
       user: auth.getCurrentUser(),
     });
-    this.refreshList();
+    this.refreshList(true);
   },
 
   onShow() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 3 });
-    }
+    this.syncTabBar();
     this.setData({ user: auth.getCurrentUser() });
     this.startClock();
   },
@@ -66,9 +70,35 @@ Page({
 
   noop() {},
 
+  syncTabBar() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      const hasModal = Boolean(
+        this.data.activeCipherBuddy ||
+          this.data.createVisible ||
+          this.data.authVisible ||
+          this.data.profileVisible
+      );
+      this.getTabBar().setData({ selected: 3, hidden: hasModal });
+    }
+  },
+
+  /** 每秒仅轻量化刷新倒计时字段，避免重建整个弹窗对象导致聊天区抖动 */
   startClock() {
     if (this._clock) clearInterval(this._clock);
-    this._clock = setInterval(() => this.refreshList(), 1000);
+    this._clock = setInterval(() => {
+      const now = Date.now();
+      const patch = {};
+      this.data.filteredBuddies.forEach((b, idx) => {
+        patch[`filteredBuddies[${idx}].remainingText`] = formatCountdown(b.expiresAt, now);
+        patch[`filteredBuddies[${idx}].isExpired`] = b.expiresAt <= now;
+      });
+      if (this.data.activeCipherBuddy) {
+        patch.cipherRemaining = formatCountdown(this.data.activeCipherBuddy.expiresAt, now);
+      }
+      if (Object.keys(patch).length > 0) {
+        this.setData(patch);
+      }
+    }, 1000);
   },
 
   requireAuth(reason, action) {
@@ -77,29 +107,29 @@ Page({
       return;
     }
     this._pendingAction = action;
-    this.setData({ authVisible: true, authReason: reason });
+    this.setData({ authVisible: true, authReason: reason }, () => this.syncTabBar());
   },
   openAuthManual() {
     this._pendingAction = null;
-    this.setData({ authVisible: true, authReason: '' });
+    this.setData({ authVisible: true, authReason: '' }, () => this.syncTabBar());
   },
   closeAuth() {
     this._pendingAction = null;
-    this.setData({ authVisible: false });
+    this.setData({ authVisible: false }, () => this.syncTabBar());
   },
   onAuthSuccess(e) {
-    this.setData({ user: e.detail.user, authVisible: false });
+    this.setData({ user: e.detail.user, authVisible: false }, () => this.syncTabBar());
     if (this._pendingAction) {
       const fn = this._pendingAction;
       this._pendingAction = null;
-      setTimeout(fn, 150);
+      setTimeout(fn, 160);
     }
   },
   openProfile() {
-    this.setData({ profileVisible: true });
+    this.setData({ profileVisible: true }, () => this.syncTabBar());
   },
   closeProfile() {
-    this.setData({ profileVisible: false });
+    this.setData({ profileVisible: false }, () => this.syncTabBar());
   },
   onProfileUpdated(e) {
     this.setData({ user: e.detail.user });
@@ -108,7 +138,7 @@ Page({
     this.setData({ user: null });
   },
 
-  refreshList() {
+  refreshList(updateCipher) {
     const now = Date.now();
     const raw = buddyStore.getAll();
     const cat = this.data.activeCategory;
@@ -128,21 +158,21 @@ Page({
       .filter((b) => cat === 'all' || b.category === cat)
       .map(decorate);
 
-    const activeCipherBuddy = this.data.activeCipherId
-      ? raw.filter((b) => b.id === this.data.activeCipherId).map(decorate)[0] || null
-      : null;
-
-    this.setData({
-      rawBuddies: raw,
-      filteredBuddies: filtered,
-      activeCipherBuddy,
-    });
+    const payload = { rawBuddies: raw, filteredBuddies: filtered };
+    if (updateCipher) {
+      const cipher = this.data.activeCipherId
+        ? raw.filter((b) => b.id === this.data.activeCipherId).map(decorate)[0] || null
+        : null;
+      payload.activeCipherBuddy = cipher;
+      payload.cipherRemaining = cipher ? cipher.remainingText : '00:00';
+    }
+    this.setData(payload, () => this.syncTabBar());
   },
 
   onSelectCategory(e) {
     wx.vibrateShort({ type: 'light' });
     this.setData({ activeCategory: e.currentTarget.dataset.id });
-    this.refreshList();
+    this.refreshList(false);
   },
 
   onJoinTap(e) {
@@ -151,7 +181,7 @@ Page({
     if (!target || target.isExpired) return;
     if (target.joinedByMe) {
       this.setData({ activeCipherId: id });
-      this.refreshList();
+      this.refreshList(true);
       return;
     }
     if (target.isFull) {
@@ -163,25 +193,26 @@ Page({
       buddyStore.toggleJoin(id);
       wx.vibrateShort({ type: 'medium' });
       this.setData({ activeCipherId: id });
-      this.refreshList();
+      this.refreshList(true);
       wx.showToast({ title: '举手成功，查看暗号 ✨', icon: 'none' });
     });
   },
 
   closeCipher() {
-    this.setData({ activeCipherId: '', activeCipherBuddy: null, msgDraft: '' });
+    this.setData(
+      { activeCipherId: '', activeCipherBuddy: null, msgDraft: '' },
+      () => this.syncTabBar()
+    );
   },
 
-  onMsgInput(e) {
-    this.setData({ msgDraft: e.detail.value || '' });
-  },
+  onMsgInput(e) { this.setData({ msgDraft: e.detail.value || '' }); },
 
   onSendQuickPhrase(e) {
     const text = e.currentTarget.dataset.text;
     if (!this.data.activeCipherId || !text) return;
     buddyStore.sendQuickMessage(this.data.activeCipherId, text);
     wx.vibrateShort({ type: 'light' });
-    this.refreshList();
+    this.refreshList(true);
   },
 
   onSendCustomMsg() {
@@ -189,26 +220,25 @@ Page({
     if (!this.data.activeCipherId || !text) return;
     buddyStore.sendQuickMessage(this.data.activeCipherId, text);
     this.setData({ msgDraft: '' });
-    this.refreshList();
+    this.refreshList(true);
   },
 
   onLeaveBuddy() {
     if (!this.data.activeCipherId) return;
     buddyStore.toggleJoin(this.data.activeCipherId);
     this.closeCipher();
-    this.refreshList();
+    this.refreshList(false);
     wx.showToast({ title: '已悄悄退出，毫无负担～', icon: 'none' });
   },
 
-  // ===== 发起 30 分钟限时搭子 =====
   onOpenCreate() {
     this.requireAuth('发起 30 分钟限时搭子', () => {
-      this.setData({ createVisible: true });
+      this.setData({ createVisible: true }, () => this.syncTabBar());
     });
   },
 
   closeCreate() {
-    this.setData({ createVisible: false });
+    this.setData({ createVisible: false }, () => this.syncTabBar());
   },
 
   onFTitle(e) { this.setData({ fTitle: e.detail.value || '' }); },
@@ -246,7 +276,7 @@ Page({
       fNote: '',
       activeCipherId: created.id,
     });
-    this.refreshList();
+    this.refreshList(true);
     wx.vibrateLong();
     wx.showToast({ title: '🎉 限时搭子已上线', icon: 'none' });
   },

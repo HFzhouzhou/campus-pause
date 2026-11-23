@@ -3,12 +3,8 @@
   padding-right: 30rpx;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 28rpx;
-  padding-right: 170rpx;
+.page-head-block {
+  margin-bottom: 26rpx;
 }
 
 .header-kicker {
@@ -21,10 +17,11 @@
 
 .header-title {
   display: block;
-  font-size: 48rpx;
+  font-size: 50rpx;
   font-weight: 800;
   color: #1d1d1f;
   margin-top: 4rpx;
+  letter-spacing: -0.6rpx;
 }
 
 .header-sub {
@@ -34,15 +31,8 @@
   margin-top: 6rpx;
 }
 
-.header-account {
-  position: fixed;
-  right: 28rpx;
-  top: 176rpx;
-  z-index: 30;
-}
-
 .input-card {
-  padding: 30rpx;
+  padding: 28rpx;
   margin-bottom: 28rpx;
 }
 
@@ -74,10 +64,6 @@
   padding: 0 30rpx;
   font-size: 27rpx;
   color: #1d1d1f;
-}
-
-.gen-btn {
-  width: 100%;
 }
 
 .plan-wrap {
@@ -206,7 +192,7 @@
   display: block;
   font-size: 24rpx;
   color: #475569;
-  line-height: 1.55;
+  line-height: 1.58;
   margin-top: 10rpx;
 }
 
@@ -218,14 +204,14 @@
 }
 
 .edit-link {
-  font-size: 22rpx;
+  font-size: 23rpx;
   font-weight: 600;
   color: #64748b;
-  padding: 8rpx 16rpx;
+  padding: 10rpx 16rpx;
 }
 
 .focus-btn {
-  padding: 12rpx 28rpx;
+  padding: 14rpx 28rpx;
   border-radius: 999rpx;
   background: #007aff;
   color: #ffffff;
@@ -270,7 +256,11 @@
   color: #ffffff;
 }
 
-/* 计时器与编辑 Sheet 内容 */
+.header-text-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
 .timer-body {
   padding: 28rpx 36rpx 32rpx;
   display: flex;
@@ -282,7 +272,7 @@
 .timer-detail {
   font-size: 24rpx;
   color: #64748b;
-  line-height: 1.55;
+  line-height: 1.58;
   margin-bottom: 34rpx;
 }
 
@@ -374,15 +364,8 @@
 
 .flex-1 {
   flex: 1;
-  margin: 0;
 }
 
 .flex-15 {
   flex: 1.5;
-  margin: 0;
-}
-
-.full-w {
-  width: 100%;
-  margin: 0;
 }

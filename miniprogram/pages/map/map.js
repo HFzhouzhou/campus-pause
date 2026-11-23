@@ -5,13 +5,14 @@ const geo = require('../../utils/geo');
 
 Page({
   data: {
-    statusBarHeight: 20,
+    menuTop: 24,
+    menuHeight: 32,
+    menuRightSpace: 104,
     user: null,
     authVisible: false,
     authReason: '',
     profileVisible: false,
 
-    // 默认聚焦广西外国语学院五合校区
     mapLng: geo.CAMPUS_CENTER.longitude,
     mapLat: geo.CAMPUS_CENTER.latitude,
     mapScale: 16.5,
@@ -32,11 +33,9 @@ Page({
     currentCardIndex: 0,
     selectedSpotId: '',
 
-    // 详情抽屉
     detailSpot: null,
     reviewDraft: '',
 
-    // 选点与 UGC 弹窗
     isPickMode: false,
     pickLng: geo.CAMPUS_CENTER.longitude,
     pickLat: geo.CAMPUS_CENTER.latitude,
@@ -54,9 +53,12 @@ Page({
 
   onLoad() {
     const app = getApp();
+    const g = (app && app.globalData) || {};
     this.mapCtx = wx.createMapContext('campusMap', this);
     this.setData({
-      statusBarHeight: (app && app.globalData && app.globalData.statusBarHeight) || 20,
+      menuTop: g.menuTop || 24,
+      menuHeight: g.menuHeight || 32,
+      menuRightSpace: g.menuRightSpace || 104,
       user: auth.getCurrentUser(),
     });
     this.refreshSpots();
@@ -64,15 +66,25 @@ Page({
   },
 
   onShow() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 0 });
-    }
+    this.syncTabBar();
     this.setData({ user: auth.getCurrentUser() });
   },
 
   noop() {},
 
-  // ===== 非强制登录拦截器 =====
+  /** 任意弹窗打开时自动隐藏自定义底部栏，防止 custom-tab-bar 覆盖弹窗按钮！ */
+  syncTabBar() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      const hasModal = Boolean(
+        this.data.detailSpot ||
+          this.data.addModalVisible ||
+          this.data.authVisible ||
+          this.data.profileVisible
+      );
+      this.getTabBar().setData({ selected: 0, hidden: hasModal });
+    }
+  },
+
   requireAuth(reason, action) {
     const user = auth.getCurrentUser();
     if (user) {
@@ -80,35 +92,35 @@ Page({
       return;
     }
     this._pendingAction = action;
-    this.setData({ authVisible: true, authReason: reason });
+    this.setData({ authVisible: true, authReason: reason }, () => this.syncTabBar());
   },
 
   openAuthManual() {
     this._pendingAction = null;
-    this.setData({ authVisible: true, authReason: '' });
+    this.setData({ authVisible: true, authReason: '' }, () => this.syncTabBar());
   },
 
   closeAuth() {
     this._pendingAction = null;
-    this.setData({ authVisible: false });
+    this.setData({ authVisible: false }, () => this.syncTabBar());
   },
 
   onAuthSuccess(e) {
     const user = e.detail.user;
-    this.setData({ user, authVisible: false });
+    this.setData({ user, authVisible: false }, () => this.syncTabBar());
     if (this._pendingAction) {
       const fn = this._pendingAction;
       this._pendingAction = null;
-      setTimeout(fn, 150);
+      setTimeout(fn, 160);
     }
   },
 
   openProfile() {
-    this.setData({ profileVisible: true });
+    this.setData({ profileVisible: true }, () => this.syncTabBar());
   },
 
   closeProfile() {
-    this.setData({ profileVisible: false });
+    this.setData({ profileVisible: false }, () => this.syncTabBar());
   },
 
   onProfileUpdated(e) {
@@ -119,7 +131,6 @@ Page({
     this.setData({ user: null });
   },
 
-  // ===== 定位与点位渲染 =====
   requestCampusLocation(forcePan) {
     wx.getLocation({
       type: 'gcj02',
@@ -282,14 +293,12 @@ Page({
     const found = this.data.filteredSpots.find((s) => s.markerId === markerId);
     if (!found) return;
     wx.vibrateShort({ type: 'light' });
-    this.setData({
-      mapLng: found.longitude,
-      mapLat: found.latitude,
-    });
+    this.setData({ mapLng: found.longitude, mapLat: found.latitude });
     this.refreshSpots(found.id);
   },
 
   onSwiperChange(e) {
+    if (e.detail.source !== 'touch') return;
     const idx = e.detail.current;
     const spot = this.data.filteredSpots[idx];
     if (!spot) return;
@@ -331,17 +340,16 @@ Page({
     wx.showToast({ title: '已回到广外五合校区', icon: 'none' });
   },
 
-  // ===== 点位详情与互动 =====
   openSpotDetail(e) {
     const id = e.currentTarget.dataset.id;
     const found = this.data.filteredSpots.find((s) => s.id === id);
     if (found) {
-      this.setData({ detailSpot: found, reviewDraft: '' });
+      this.setData({ detailSpot: found, reviewDraft: '' }, () => this.syncTabBar());
     }
   },
 
   closeSpotDetail() {
-    this.setData({ detailSpot: null });
+    this.setData({ detailSpot: null }, () => this.syncTabBar());
   },
 
   onToggleLike(e) {
@@ -394,15 +402,17 @@ Page({
     });
   },
 
-  // ===== UGC 选点与标记新地点 =====
   onEnterPickMode() {
     this.requireAuth('标记新的校园治愈点', () => {
-      this.setData({
-        isPickMode: true,
-        detailSpot: null,
-        geoSuggestionName: '',
-        geoSuggestionAddress: '',
-      });
+      this.setData(
+        {
+          isPickMode: true,
+          detailSpot: null,
+          geoSuggestionName: '',
+          geoSuggestionAddress: '',
+        },
+        () => this.syncTabBar()
+      );
       this.updatePickCoords(this.data.mapLng, this.data.mapLat);
     });
   },
@@ -448,14 +458,17 @@ Page({
   },
 
   confirmPickLocation() {
-    this.setData({
-      addModalVisible: true,
-      ugcName: this.data.ugcName || this.data.geoSuggestionName || '',
-    });
+    this.setData(
+      {
+        addModalVisible: true,
+        ugcName: this.data.ugcName || this.data.geoSuggestionName || '',
+      },
+      () => this.syncTabBar()
+    );
   },
 
   closeAddModal() {
-    this.setData({ addModalVisible: false });
+    this.setData({ addModalVisible: false }, () => this.syncTabBar());
   },
 
   onChooseSpotPhoto() {
@@ -465,9 +478,7 @@ Page({
       sizeType: ['compressed'],
       success: (res) => {
         const tempPath = res.tempFiles && res.tempFiles[0] && res.tempFiles[0].tempFilePath;
-        if (tempPath) {
-          this.setData({ ugcCoverUrl: tempPath });
-        }
+        if (tempPath) this.setData({ ugcCoverUrl: tempPath });
       },
     });
   },
@@ -476,21 +487,10 @@ Page({
     this.setData({ ugcCoverUrl: e.currentTarget.dataset.url });
   },
 
-  onUgcName(e) {
-    this.setData({ ugcName: e.detail.value || '' });
-  },
-
-  onUgcCat(e) {
-    this.setData({ ugcCategory: e.currentTarget.dataset.id });
-  },
-
-  onUgcStar(e) {
-    this.setData({ ugcRating: Number(e.currentTarget.dataset.star) });
-  },
-
-  onUgcReason(e) {
-    this.setData({ ugcReason: e.detail.value || '' });
-  },
+  onUgcName(e) { this.setData({ ugcName: e.detail.value || '' }); },
+  onUgcCat(e) { this.setData({ ugcCategory: e.currentTarget.dataset.id }); },
+  onUgcStar(e) { this.setData({ ugcRating: Number(e.currentTarget.dataset.star) }); },
+  onUgcReason(e) { this.setData({ ugcReason: e.detail.value || '' }); },
 
   onSubmitAddSpot() {
     if (!this.data.ugcName.trim() || !this.data.ugcReason.trim()) {
@@ -511,15 +511,18 @@ Page({
       user ? user.nickname : '五合探索者'
     );
 
-    this.setData({
-      addModalVisible: false,
-      isPickMode: false,
-      activeCategory: 'all',
-      ugcName: '',
-      ugcReason: '',
-      mapLng: created.longitude,
-      mapLat: created.latitude,
-    });
+    this.setData(
+      {
+        addModalVisible: false,
+        isPickMode: false,
+        activeCategory: 'all',
+        ugcName: '',
+        ugcReason: '',
+        mapLng: created.longitude,
+        mapLat: created.latitude,
+      },
+      () => this.syncTabBar()
+    );
     this.refreshSpots(created.id);
     wx.vibrateLong();
     wx.showToast({ title: `🎉 已点亮「${created.name}」`, icon: 'none' });

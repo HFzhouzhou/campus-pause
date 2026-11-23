@@ -21,82 +21,97 @@ button::after {
   border: none;
 }
 
-/* 温和明亮的 iOS 分组氛围底 */
+.tap-active {
+  opacity: 0.78;
+  transform: scale(0.97);
+}
+
+/* 温和明亮的 iOS 分组页面氛围底 */
 .ios-canvas {
   min-height: 100vh;
   background:
-    radial-gradient(65% 40% at 10% 0%, rgba(56, 189, 248, 0.14) 0%, transparent 65%),
-    radial-gradient(60% 38% at 92% 8%, rgba(167, 139, 250, 0.12) 0%, transparent 65%),
+    radial-gradient(68% 36% at 8% 0%, rgba(56, 189, 248, 0.13) 0%, transparent 68%),
+    radial-gradient(64% 34% at 92% 6%, rgba(167, 139, 250, 0.12) 0%, transparent 66%),
     #f2f2f7;
+}
+
+/* 顶部与微信右上角胶囊对齐的原生感导航条 */
+.ios-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
 }
 
 /* 标准 iOS 卡片 */
 .ios-card {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
-  border: 1rpx solid rgba(255, 255, 255, 0.95);
-  border-radius: 44rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.96);
+  border-radius: 40rpx;
   box-shadow:
     0 2rpx 6rpx rgba(15, 23, 42, 0.04),
-    0 16rpx 40rpx -12rpx rgba(15, 23, 42, 0.09);
+    0 14rpx 36rpx -12rpx rgba(15, 23, 42, 0.08);
 }
 
-/* 苹果浅色液态玻璃 HUD 材质 */
+/* 苹果浅色液态玻璃材质 */
 .liquid-glass {
   background: linear-gradient(
     145deg,
-    rgba(255, 255, 255, 0.86) 0%,
-    rgba(255, 255, 255, 0.72) 55%,
-    rgba(255, 255, 255, 0.82) 100%
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.76) 55%,
+    rgba(255, 255, 255, 0.86) 100%
   );
   backdrop-filter: blur(28px) saturate(195%);
   -webkit-backdrop-filter: blur(28px) saturate(195%);
-  border: 1rpx solid rgba(255, 255, 255, 0.92);
+  border: 1rpx solid rgba(255, 255, 255, 0.96);
   box-shadow:
     inset 0 2rpx 1rpx rgba(255, 255, 255, 1),
-    0 12rpx 32rpx -8rpx rgba(15, 23, 42, 0.14);
+    0 10rpx 28rpx -8rpx rgba(15, 23, 42, 0.13);
 }
 
 .liquid-dock {
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.86) 0%,
-    rgba(255, 255, 255, 0.72) 55%,
-    rgba(255, 255, 255, 0.82) 100%
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.78) 55%,
+    rgba(255, 255, 255, 0.86) 100%
   );
   backdrop-filter: blur(36px) saturate(210%);
   -webkit-backdrop-filter: blur(36px) saturate(210%);
-  border: 1rpx solid rgba(255, 255, 255, 0.95);
+  border: 1rpx solid rgba(255, 255, 255, 0.98);
   box-shadow:
     inset 0 2rpx 2rpx rgba(255, 255, 255, 1),
-    0 20rpx 48rpx -10rpx rgba(15, 23, 42, 0.2),
-    0 4rpx 14rpx rgba(15, 23, 42, 0.06);
+    0 16rpx 40rpx -10rpx rgba(15, 23, 42, 0.18),
+    0 4rpx 12rpx rgba(15, 23, 42, 0.06);
 }
 
-/* 顶部账号液态胶囊 */
+/* 顶部账号胶囊（严格匹配微信胶囊高度，永不遮挡标题或内容） */
 .account-pill {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 12rpx;
-  padding: 8rpx 22rpx 8rpx 10rpx;
+  gap: 10rpx;
+  height: 64rpx;
+  padding: 0 22rpx 0 8rpx;
   border-radius: 999rpx;
 }
 
 .account-pill-guest {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 12rpx 28rpx;
+  height: 64rpx;
+  padding: 0 26rpx;
   border-radius: 999rpx;
-  font-size: 25rpx;
+  font-size: 24rpx;
   font-weight: 600;
   color: #007aff;
 }
 
 .account-avatar {
-  width: 52rpx;
-  height: 52rpx;
+  width: 48rpx;
+  height: 48rpx;
   border-radius: 999rpx;
   border: 2rpx solid #ffffff;
   background: #e5e7eb;
@@ -106,59 +121,67 @@ button::after {
   font-size: 24rpx;
   font-weight: 600;
   color: #1d1d1f;
-  max-width: 140rpx;
+  max-width: 150rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* iOS 主按钮与次按钮 */
+/* 纯 View 实现的 iOS 按钮（彻底规避微信 style:v2 <button> 默认宽度和样式冲突！） */
+.ios-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  padding: 0 32rpx;
+  border-radius: 999rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  text-align: center;
+  transition: transform 0.14s ease, opacity 0.14s ease;
+}
+
 .ios-btn-primary {
   background: #007aff;
   color: #ffffff;
-  font-size: 28rpx;
-  font-weight: 600;
-  border-radius: 999rpx;
-  padding: 22rpx 32rpx;
-  line-height: 1.2;
-  box-shadow: 0 12rpx 28rpx rgba(0, 122, 255, 0.24);
-}
-
-.ios-btn-primary:active {
-  opacity: 0.88;
-  transform: scale(0.98);
+  box-shadow: 0 10rpx 24rpx rgba(0, 122, 255, 0.24);
 }
 
 .ios-btn-dark {
   background: #1d1d1f;
   color: #ffffff;
-  font-size: 28rpx;
-  font-weight: 600;
-  border-radius: 999rpx;
-  padding: 22rpx 32rpx;
-  line-height: 1.2;
-  box-shadow: 0 12rpx 28rpx rgba(15, 23, 42, 0.2);
+  box-shadow: 0 10rpx 24rpx rgba(15, 23, 42, 0.2);
+}
+
+.ios-btn-green {
+  background: #07c160;
+  color: #ffffff;
+  box-shadow: 0 10rpx 24rpx rgba(7, 193, 96, 0.24);
 }
 
 .ios-btn-ghost {
   background: #f2f2f7;
   color: #475569;
-  font-size: 28rpx;
-  font-weight: 600;
-  border-radius: 999rpx;
-  padding: 22rpx 32rpx;
-  line-height: 1.2;
 }
 
-/* 通用三段式 iOS Bottom Sheet（顶部固定 + 中间安全滚动 + 底部固定，绝不截断！） */
+.ios-btn-danger {
+  background: #fff1f2;
+  color: #ff3b30;
+}
+
+.ios-btn-disabled {
+  opacity: 0.38;
+}
+
+/* 通用三段式 iOS Bottom Sheet（配合隐藏 custom-tab-bar，100% 不遮挡不截断） */
 .sheet-mask {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 900;
-  background: rgba(15, 23, 42, 0.36);
+  z-index: 999;
+  background: rgba(15, 23, 42, 0.38);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -168,13 +191,13 @@ button::after {
   width: 100%;
   max-height: 86vh;
   background: #ffffff;
-  border-top-left-radius: 48rpx;
-  border-top-right-radius: 48rpx;
+  border-top-left-radius: 44rpx;
+  border-top-right-radius: 44rpx;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 -16rpx 60rpx rgba(15, 23, 42, 0.16);
-  animation: sheetSlideUp 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 -16rpx 56rpx rgba(15, 23, 42, 0.16);
+  animation: sheetSlideUp 0.26s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes sheetSlideUp {
@@ -189,8 +212,7 @@ button::after {
 .sheet-handle-wrap {
   display: flex;
   justify-content: center;
-  padding-top: 18rpx;
-  padding-bottom: 8rpx;
+  padding: 16rpx 0 6rpx;
   flex-shrink: 0;
 }
 
@@ -202,11 +224,12 @@ button::after {
 }
 
 .sheet-header {
-  padding: 12rpx 36rpx 24rpx;
+  padding: 10rpx 36rpx 22rpx;
   border-bottom: 1rpx solid #f1f5f9;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  gap: 20rpx;
   flex-shrink: 0;
 }
 
@@ -214,7 +237,7 @@ button::after {
   font-size: 34rpx;
   font-weight: 700;
   color: #1d1d1f;
-  letter-spacing: -0.5rpx;
+  letter-spacing: -0.4rpx;
 }
 
 .sheet-subtitle {
@@ -224,23 +247,25 @@ button::after {
 }
 
 .sheet-close {
-  width: 58rpx;
-  height: 58rpx;
+  width: 56rpx;
+  height: 56rpx;
   border-radius: 999rpx;
   background: #f2f2f7;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 30rpx;
+  font-size: 26rpx;
   color: #64748b;
   flex-shrink: 0;
 }
 
-.sheet-body {
-  flex: 1;
-  min-height: 0;
-  max-height: 60vh;
-  padding: 28rpx 36rpx;
+.sheet-scroll {
+  width: 100%;
+  max-height: 58vh;
+}
+
+.sheet-inner {
+  padding: 26rpx 36rpx 32rpx;
 }
 
 .sheet-footer {
@@ -248,11 +273,11 @@ button::after {
   border-top: 1rpx solid #f1f5f9;
   background: #ffffff;
   display: flex;
-  gap: 20rpx;
+  align-items: center;
+  gap: 18rpx;
   flex-shrink: 0;
 }
 
-/* 页面底部避开悬浮液态胶囊 TabBar */
 .dock-spacer {
-  height: calc(176rpx + env(safe-area-inset-bottom));
+  height: calc(184rpx + env(safe-area-inset-bottom));
 }

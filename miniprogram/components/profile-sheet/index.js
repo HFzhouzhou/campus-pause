@@ -1,6 +1,10 @@
 const auth = require('../../utils/auth');
 
 Component({
+  options: {
+    styleIsolation: 'apply-shared',
+  },
+
   properties: {
     visible: { type: Boolean, value: false },
     user: { type: Object, value: null },

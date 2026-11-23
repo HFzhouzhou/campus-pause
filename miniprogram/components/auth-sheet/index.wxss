@@ -12,20 +12,19 @@
 .mode-segment {
   display: flex;
   background: #f2f2f7;
-  border-radius: 28rpx;
+  border-radius: 26rpx;
   padding: 8rpx;
-  margin-bottom: 32rpx;
+  margin-bottom: 30rpx;
 }
 
 .mode-btn {
   flex: 1;
   text-align: center;
   padding: 16rpx 0;
-  border-radius: 22rpx;
+  border-radius: 20rpx;
   font-size: 26rpx;
   font-weight: 600;
   color: #64748b;
-  transition: all 0.2s ease;
 }
 
 .mode-btn-active {
@@ -35,7 +34,7 @@
 }
 
 .auth-block {
-  padding-bottom: 24rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
 }
 
 .wx-profile-row {
@@ -47,20 +46,23 @@
 
 .wx-avatar-btn {
   position: relative;
-  width: 120rpx;
-  height: 120rpx;
-  padding: 0;
-  margin: 0;
-  border-radius: 999rpx;
+  width: 124rpx !important;
+  height: 124rpx !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 999rpx !important;
   overflow: hidden;
-  background: #f2f2f7;
+  background: #f2f2f7 !important;
   flex-shrink: 0;
+  line-height: 1 !important;
 }
 
 .wx-avatar-img {
-  width: 120rpx;
-  height: 120rpx;
+  width: 124rpx;
+  height: 124rpx;
   border-radius: 999rpx;
+  display: block;
 }
 
 .wx-avatar-tag {
@@ -68,7 +70,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(15, 23, 42, 0.48);
   color: #ffffff;
   font-size: 18rpx;
   line-height: 34rpx;
@@ -96,9 +98,9 @@
   width: 100%;
   height: 84rpx;
   background: #f2f2f7;
-  border-radius: 26rpx;
+  border-radius: 24rpx;
   padding: 0 26rpx;
-  font-size: 28rpx;
+  font-size: 27rpx;
   color: #1d1d1f;
 }
 
@@ -115,32 +117,16 @@
 
 .send-code-btn {
   height: 84rpx;
-  line-height: 84rpx;
   padding: 0 28rpx;
-  border-radius: 26rpx;
+  border-radius: 24rpx;
   background: rgba(0, 122, 255, 0.12);
   color: #007aff;
   font-size: 24rpx;
   font-weight: 600;
-  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-}
-
-.wx-login-btn {
-  width: 100%;
-  height: 92rpx;
-  line-height: 92rpx;
-  border-radius: 999rpx;
-  background: #07c160;
-  color: #ffffff;
-  font-size: 30rpx;
-  font-weight: 600;
-  box-shadow: 0 12rpx 28rpx rgba(7, 193, 96, 0.25);
-}
-
-.full-btn {
-  width: 100%;
-  margin-top: 8rpx;
 }
 
 .error-text {
@@ -154,5 +140,5 @@
   text-align: center;
   font-size: 22rpx;
   color: #94a3b8;
-  margin-top: 20rpx;
+  margin-top: 22rpx;
 }

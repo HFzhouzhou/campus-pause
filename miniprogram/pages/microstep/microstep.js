@@ -9,7 +9,9 @@ function formatClock(sec) {
 
 Page({
   data: {
-    statusBarHeight: 20,
+    menuTop: 24,
+    menuHeight: 32,
+    menuRightSpace: 104,
     user: null,
     authVisible: false,
     authReason: '',
@@ -22,14 +24,12 @@ Page({
     completedCount: 0,
     progressPercent: 0,
 
-    // 专注倒计时
     timerStep: null,
     timerRemaining: 600,
     timerText: '10:00',
     timerRunning: false,
     timerDone: false,
 
-    // 微调步骤
     editingStep: null,
     editTitle: '',
     editDetail: '',
@@ -37,18 +37,25 @@ Page({
 
   onLoad() {
     const app = getApp();
-    const history = engine.getHistory();
+    const g = (app && app.globalData) || {};
+    let history = engine.getHistory();
+    // 首次进入预置一个逼真示例计划，让页面信息充实、上手即体验
+    if (history.length === 0) {
+      const init = engine.createBreakdown('专四/四六级单词听力背不完');
+      history = init.history;
+    }
+
     this.setData({
-      statusBarHeight: (app && app.globalData && app.globalData.statusBarHeight) || 20,
+      menuTop: g.menuTop || 24,
+      menuHeight: g.menuHeight || 32,
+      menuRightSpace: g.menuRightSpace || 104,
       user: auth.getCurrentUser(),
     });
     this.syncPlans(history, history[0] ? history[0].id : null);
   },
 
   onShow() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 2 });
-    }
+    this.syncTabBar();
     this.setData({ user: auth.getCurrentUser() });
   },
 
@@ -58,35 +65,47 @@ Page({
 
   noop() {},
 
+  syncTabBar() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      const hasModal = Boolean(
+        this.data.timerStep ||
+          this.data.editingStep ||
+          this.data.authVisible ||
+          this.data.profileVisible
+      );
+      this.getTabBar().setData({ selected: 2, hidden: hasModal });
+    }
+  },
+
   requireAuth(reason, action) {
     if (auth.getCurrentUser()) {
       action();
       return;
     }
     this._pendingAction = action;
-    this.setData({ authVisible: true, authReason: reason });
+    this.setData({ authVisible: true, authReason: reason }, () => this.syncTabBar());
   },
   openAuthManual() {
     this._pendingAction = null;
-    this.setData({ authVisible: true, authReason: '' });
+    this.setData({ authVisible: true, authReason: '' }, () => this.syncTabBar());
   },
   closeAuth() {
     this._pendingAction = null;
-    this.setData({ authVisible: false });
+    this.setData({ authVisible: false }, () => this.syncTabBar());
   },
   onAuthSuccess(e) {
-    this.setData({ user: e.detail.user, authVisible: false });
+    this.setData({ user: e.detail.user, authVisible: false }, () => this.syncTabBar());
     if (this._pendingAction) {
       const fn = this._pendingAction;
       this._pendingAction = null;
-      setTimeout(fn, 150);
+      setTimeout(fn, 160);
     }
   },
   openProfile() {
-    this.setData({ profileVisible: true });
+    this.setData({ profileVisible: true }, () => this.syncTabBar());
   },
   closeProfile() {
-    this.setData({ profileVisible: false });
+    this.setData({ profileVisible: false }, () => this.syncTabBar());
   },
   onProfileUpdated(e) {
     this.setData({ user: e.detail.user });
@@ -140,7 +159,6 @@ Page({
     this.syncPlans(nextHistory, this.data.activePlan.id);
   },
 
-  // ===== 10 分钟微行动专注计时器 =====
   openTimer(e) {
     if (!this.data.activePlan) return;
     const stepId = e.currentTarget.dataset.id;
@@ -148,13 +166,16 @@ Page({
     if (!step) return;
 
     const secs = (step.durationMinutes || 10) * 60;
-    this.setData({
-      timerStep: step,
-      timerRemaining: secs,
-      timerText: formatClock(secs),
-      timerRunning: true,
-      timerDone: false,
-    });
+    this.setData(
+      {
+        timerStep: step,
+        timerRemaining: secs,
+        timerText: formatClock(secs),
+        timerRunning: true,
+        timerDone: false,
+      },
+      () => this.syncTabBar()
+    );
     this.startTimerTick();
   },
 
@@ -187,34 +208,37 @@ Page({
       const nextHistory = engine.toggleStepCompleted(this.data.activePlan.id, step.id);
       this.syncPlans(nextHistory, this.data.activePlan.id);
     }
-    this.setData({ timerRunning: false, timerDone: true, timerRemaining: 0, timerText: '00:00' });
+    this.setData({
+      timerRunning: false,
+      timerDone: true,
+      timerRemaining: 0,
+      timerText: '00:00',
+    });
   },
 
   closeTimer() {
     if (this._timer) clearInterval(this._timer);
-    this.setData({ timerStep: null, timerRunning: false });
+    this.setData({ timerStep: null, timerRunning: false }, () => this.syncTabBar());
   },
 
-  // ===== 自定义微调步骤 =====
   openEditStep(e) {
     if (!this.data.activePlan) return;
     const step = this.data.activePlan.steps.find((s) => s.id === e.currentTarget.dataset.id);
     if (!step) return;
-    this.setData({
-      editingStep: step,
-      editTitle: step.title,
-      editDetail: step.detail,
-    });
+    this.setData(
+      {
+        editingStep: step,
+        editTitle: step.title,
+        editDetail: step.detail,
+      },
+      () => this.syncTabBar()
+    );
   },
   closeEditStep() {
-    this.setData({ editingStep: null });
+    this.setData({ editingStep: null }, () => this.syncTabBar());
   },
-  onEditTitle(e) {
-    this.setData({ editTitle: e.detail.value || '' });
-  },
-  onEditDetail(e) {
-    this.setData({ editDetail: e.detail.value || '' });
-  },
+  onEditTitle(e) { this.setData({ editTitle: e.detail.value || '' }); },
+  onEditDetail(e) { this.setData({ editDetail: e.detail.value || '' }); },
   saveEditStep() {
     if (!this.data.activePlan || !this.data.editingStep) return;
     const nextHistory = engine.updateStepContent(
@@ -224,7 +248,7 @@ Page({
       this.data.editDetail
     );
     this.syncPlans(nextHistory, this.data.activePlan.id);
-    this.setData({ editingStep: null });
+    this.setData({ editingStep: null }, () => this.syncTabBar());
     wx.showToast({ title: '微步骤已更新 ✨', icon: 'none' });
   },
 });

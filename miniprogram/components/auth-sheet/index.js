@@ -1,6 +1,10 @@
 const auth = require('../../utils/auth');
 
 Component({
+  options: {
+    styleIsolation: 'apply-shared',
+  },
+
   properties: {
     visible: { type: Boolean, value: false },
     reason: { type: String, value: '' },
@@ -56,6 +60,7 @@ Component({
     },
 
     async onSendCode() {
+      if (this.data.sending || this.data.countdown > 0) return;
       const email = this.data.email.trim();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         this.setData({ errorMsg: '请输入正确的邮箱地址' });
@@ -85,6 +90,7 @@ Component({
     },
 
     async onEmailLogin() {
+      if (this.data.submitting || !this.data.email || this.data.code.length < 6) return;
       this.setData({ submitting: true, errorMsg: '' });
       try {
         const user = await auth.verifyEmailAndLogin(
@@ -104,6 +110,7 @@ Component({
     },
 
     async onWeChatLogin() {
+      if (this.data.submitting) return;
       this.setData({ submitting: true, errorMsg: '' });
       try {
         const user = await auth.loginWithWeChat({
@@ -115,7 +122,7 @@ Component({
         this.triggerEvent('success', { user });
       } catch (err) {
         this.setData({
-          errorMsg: err.message || '请在服务器配置好小程序 AppID/AppSecret 后重试，或先用邮箱验证码登录',
+          errorMsg: err.message || '微信登录失败，请检查网络或切换邮箱验证码登录',
         });
       } finally {
         this.setData({ submitting: false });

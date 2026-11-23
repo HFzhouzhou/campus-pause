@@ -1,18 +1,17 @@
-<view class="ios-canvas vent-page" style="padding-top: {{statusBarHeight + 12}}px;">
-  <!-- 顶部标题 + 账号胶囊 -->
-  <view class="page-header">
-    <view>
-      <text class="header-kicker">INSTANT VENT · 阅后即焚</text>
-      <text class="header-title">情绪粉碎机</text>
-      <text class="header-sub">写下崩溃丢进黑洞，彻底清空绝不留痕</text>
+<view class="ios-canvas vent-page" style="padding-top: {{menuTop}}px;">
+  <!-- 顶部与微信胶囊对齐的导航栏 -->
+  <view class="ios-nav-row" style="height: {{menuHeight}}px; padding-right: {{menuRightSpace}}px;">
+    <view wx:if="{{user}}" class="liquid-dock account-pill" hover-class="tap-active" bindtap="openProfile">
+      <image class="account-avatar" src="{{user.avatarUrl}}" mode="aspectFill" />
+      <text class="account-name">{{user.nickname}}</text>
     </view>
-    <view class="header-account">
-      <view wx:if="{{user}}" class="liquid-dock account-pill" bindtap="openProfile">
-        <image class="account-avatar" src="{{user.avatarUrl}}" mode="aspectFill" />
-        <text class="account-name">{{user.nickname}}</text>
-      </view>
-      <view wx:else class="liquid-dock account-pill-guest" bindtap="openAuthManual">登录</view>
-    </view>
+    <view wx:else class="liquid-dock account-pill-guest" hover-class="tap-active" bindtap="openAuthManual">登录</view>
+  </view>
+
+  <view class="page-head-block">
+    <text class="header-kicker">INSTANT VENT · 阅后即焚</text>
+    <text class="header-title">情绪粉碎机</text>
+    <text class="header-sub">写下崩溃丢进黑洞，彻底清空绝不留痕</text>
   </view>
 
   <!-- 宣泄主卡片 -->
@@ -22,6 +21,7 @@
         wx:for="{{quickTags}}"
         wx:key="*this"
         class="quick-tag"
+        hover-class="tap-active"
         data-tag="{{item}}"
         bindtap="onAddQuickTag"
       >+ {{item}}</view>
@@ -46,7 +46,9 @@
       <view class="shout-fill" style="width: {{shoutPercent}}%;"></view>
       <view class="shout-inner">
         <view class="shout-left">
-          <view class="shout-mic">🎙️</view>
+          <view class="shout-mic">
+            <view class="mic-dot {{shouting ? 'mic-dot-on' : ''}}"></view>
+          </view>
           <view>
             <text class="shout-title">{{shouting ? '无声呐喊释放中…松手排空' : '按住「吼一嗓子」'}}</text>
             <text class="shout-sub">{{shouting ? '模拟声压 ' + shoutDb + ' dB · 不录音' : '图书馆/宿舍也能用的静音释放按钮'}}</text>
@@ -56,23 +58,23 @@
       </view>
     </view>
 
-    <button
-      class="ios-btn-dark shred-btn"
-      disabled="{{!ventText || shredding}}"
+    <view
+      class="ios-btn ios-btn-dark {{(!ventText || shredding) ? 'ios-btn-disabled' : ''}}"
+      hover-class="tap-active"
       bindtap="onShred"
     >
-      🔥 彻底粉碎（吸入黑洞）
-    </button>
+      彻底粉碎 · 吸入黑洞
+    </view>
   </view>
 
-  <!-- 隐形心理安全兜底：温和暖光卡片（绝不红字惊吓） -->
+  <!-- 隐形心理安全兜底：温和暖光卡片 -->
   <view wx:if="{{showCareCard}}" class="care-card">
     <view class="care-head">
       <view>
         <text class="care-title">刚刚那段情绪一定让你背负了很久吧</text>
         <text class="care-sub">你不需要一个人硬扛，这里有一盏一直亮着的灯</text>
       </view>
-      <text class="care-close" bindtap="dismissCare">✕</text>
+      <view class="care-close" bindtap="dismissCare">✕</view>
     </view>
     <text class="care-body">文字已彻底粉碎且不会留下任何记录。若此刻觉得呼吸有点沉重，可随时联系完全匿名的温柔支持通道：</text>
     <view class="care-green">
@@ -80,28 +82,28 @@
         <text class="care-green-title">校园心理中心 · 24h 匿名绿色预约</text>
         <text class="care-green-sub">仅用代号沟通 · 严格保密</text>
       </view>
-      <view class="care-book-btn" bindtap="onBookCare">
+      <view class="care-book-btn" hover-class="tap-active" bindtap="onBookCare">
         {{careBooked ? '通道 #PAU-24H' : '匿名预约'}}
       </view>
     </view>
     <view class="care-phones">
-      <view class="care-phone-item" data-tel="4001619995" bindtap="onCallHotline">
+      <view class="care-phone-item" hover-class="tap-active" data-tel="4001619995" bindtap="onCallHotline">
         <text class="phone-name">希望 24 热线</text>
         <text class="phone-num">400-161-9995</text>
       </view>
-      <view class="care-phone-item" data-tel="12356" bindtap="onCallHotline">
+      <view class="care-phone-item" hover-class="tap-active" data-tel="12356" bindtap="onCallHotline">
         <text class="phone-name">全国心理援助</text>
         <text class="phone-num">12356</text>
       </view>
     </view>
   </view>
 
-  <!-- 同校悬浮虹彩液态泡泡（长按蓄力抱抱，无评论区） -->
+  <!-- 同校悬浮虹彩液态泡泡 -->
   <view class="bubble-section">
     <view class="bubble-header">
       <view>
-        <text class="bubble-sec-title">✦ 同校悬浮共鸣泡泡</text>
-        <text class="bubble-sec-sub">长按任意泡泡蓄满暖光送出抱抱，严格关闭评论区</text>
+        <text class="bubble-sec-title">同校悬浮共鸣泡泡</text>
+        <text class="bubble-sec-sub">长按泡泡蓄满暖光送出抱抱 · 关闭评论区</text>
       </view>
       <view class="no-comment-pill">零评论内耗</view>
     </view>
@@ -112,6 +114,7 @@
       class="soap-bubble {{holdingBubbleId === item.id ? 'soap-bubble-charging' : ''}} {{burstBubbleId === item.id ? 'soap-bubble-burst' : ''}}"
       data-id="{{item.id}}"
       bindtouchstart="startBubbleHold"
+      bindtouchmove="moveBubbleHold"
       bindtouchend="endBubbleHold"
       bindtouchcancel="endBubbleHold"
     >
@@ -122,7 +125,6 @@
       </view>
       <text class="bubble-text">{{item.content}}</text>
 
-      <!-- 蓄力暖光条 -->
       <view class="charge-track">
         <view
           class="charge-fill"
@@ -136,6 +138,7 @@
         </view>
         <view
           class="emp-pill {{item.empathizedByMe ? 'emp-pill-on' : ''}}"
+          hover-class="tap-active"
           data-id="{{item.id}}"
           catchtap="onTapEmpathy"
         >
@@ -147,7 +150,7 @@
 
   <view class="dock-spacer"></view>
 
-  <!-- 全屏黑洞旋转粉碎遮罩 -->
+  <!-- 黑洞粉碎全屏遮罩 -->
   <view wx:if="{{shredding}}" class="vortex-mask">
     <view class="vortex-ring"></view>
     <view class="vortex-card">{{shredSnapshot}}</view>

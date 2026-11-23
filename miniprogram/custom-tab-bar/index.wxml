@@ -1,4 +1,4 @@
-<view class="dock-wrap">
+<view wx:if="{{!hidden}}" class="dock-wrap">
   <view class="dock-capsule">
     <view class="dock-specular"></view>
     <view
@@ -10,7 +10,11 @@
       bindtap="switchTab"
     >
       <view wx:if="{{selected === index}}" class="dock-lens"></view>
-      <text class="dock-icon">{{item.icon}}</text>
+      <image
+        class="dock-icon-img"
+        src="{{selected === index ? item.selectedIconPath : item.iconPath}}"
+        mode="aspectFit"
+      />
       <text class="dock-label">{{item.text}}</text>
     </view>
   </view>
