@@ -1,0 +1,336 @@
+<view class="map-page">
+  <!-- 全屏微信原生地图（默认聚焦广西外国语学院五合校区） -->
+  <map
+    id="campusMap"
+    class="campus-map"
+    longitude="{{mapLng}}"
+    latitude="{{mapLat}}"
+    scale="{{mapScale}}"
+    markers="{{markers}}"
+    enable-satellite="{{isSatellite}}"
+    show-location="{{true}}"
+    enable-zoom="{{true}}"
+    enable-scroll="{{true}}"
+    bindmarkertap="onMarkerTap"
+    bindregionchange="onRegionChange"
+    bindtap="onMapTap"
+  />
+
+  <!-- 顶部 Apple Liquid Glass 悬浮栏（避开状态栏与右上角微信原生胶囊） -->
+  <view class="top-hud" style="padding-top: {{statusBarHeight + 8}}px;">
+    <!-- 第一行：校区定位状态 + 登录/头像胶囊（避开微信胶囊左侧排布） -->
+    <view class="top-brand-row">
+      <view class="liquid-glass campus-badge" bindtap="onBackToCampus">
+        <view class="status-dot {{hasUserGps ? 'dot-green' : 'dot-blue'}}"></view>
+        <text class="campus-badge-text">广外·五合校区</text>
+      </view>
+
+      <view wx:if="{{user}}" class="liquid-dock account-pill" bindtap="openProfile">
+        <image class="account-avatar" src="{{user.avatarUrl}}" mode="aspectFill" />
+        <text class="account-name">{{user.nickname}}</text>
+      </view>
+      <view wx:else class="liquid-dock account-pill-guest" bindtap="openAuthManual">
+        <text>登录</text>
+      </view>
+    </view>
+
+    <!-- 第二行：毛玻璃搜索框（高德小程序 POI 实搜） -->
+    <view class="search-wrap">
+      <view class="liquid-dock search-bar">
+        <text class="search-icon">🔍</text>
+        <input
+          class="search-input"
+          value="{{searchQuery}}"
+          placeholder="搜索明德楼、图书馆、落日角落…"
+          placeholder-style="color: #94A3B8;"
+          bindinput="onSearchInput"
+        />
+        <text wx:if="{{searchQuery}}" class="search-clear" bindtap="clearSearch">✕</text>
+      </view>
+
+      <!-- 高德 POI 搜索下拉 -->
+      <view wx:if="{{poiResults.length > 0}}" class="poi-dropdown liquid-glass">
+        <view
+          wx:for="{{poiResults}}"
+          wx:key="id"
+          class="poi-item"
+          data-index="{{index}}"
+          bindtap="onSelectPoi"
+        >
+          <text class="poi-pin">📍</text>
+          <view class="poi-info">
+            <text class="poi-name">{{item.name}}</text>
+            <text class="poi-addr">{{item.address}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 第三行：分类筛选胶囊 -->
+    <scroll-view scroll-x enable-flex class="cat-scroll" show-scrollbar="{{false}}">
+      <view
+        wx:for="{{categories}}"
+        wx:key="id"
+        class="cat-pill {{activeCategory === item.id ? 'cat-pill-active' : 'liquid-glass'}}"
+        data-id="{{item.id}}"
+        bindtap="onSelectCategory"
+      >
+        <text>{{item.emoji}} {{item.label}}</text>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 右侧液态玻璃地图控件 -->
+  <view class="right-controls">
+    <view class="liquid-dock ctrl-btn {{isSatellite ? 'ctrl-active' : ''}}" bindtap="toggleSatellite">
+      <text class="ctrl-ico">🛰️</text>
+      <text class="ctrl-txt">{{isSatellite ? '卫星' : '标准'}}</text>
+    </view>
+    <view class="liquid-dock ctrl-group">
+      <view class="ctrl-mini" bindtap="zoomIn">+</view>
+      <view class="ctrl-divider"></view>
+      <view class="ctrl-mini" bindtap="zoomOut">−</view>
+    </view>
+    <view class="liquid-dock ctrl-btn" bindtap="onLocateMe">
+      <text class="ctrl-ico">🎯</text>
+    </view>
+    <view class="liquid-dock ctrl-btn" bindtap="onBackToCampus">
+      <text class="ctrl-ico">🎓</text>
+    </view>
+  </view>
+
+  <!-- 选点模式：屏幕中心准星 -->
+  <view wx:if="{{isPickMode}}" class="crosshair-overlay">
+    <view class="liquid-dock crosshair-label">{{geoSuggestionName || '拖动地图对准你想标记的位置'}}</view>
+    <view class="crosshair-dot">⊕</view>
+  </view>
+
+  <!-- 底部卡片流 / 选点确认条 -->
+  <view class="bottom-area">
+    <block wx:if="{{isPickMode}}">
+      <view class="pick-bar liquid-dock">
+        <view class="pick-meta">
+          <text class="pick-title">📍 {{geoSuggestionName || '已锁定坐标'}}</text>
+          <text class="pick-coord">{{pickCoordText}}</text>
+        </view>
+        <view class="pick-actions">
+          <button class="ios-btn-ghost pick-cancel" bindtap="cancelPickMode">取消</button>
+          <button class="ios-btn-primary pick-confirm" bindtap="confirmPickLocation">确认此位置</button>
+        </view>
+      </view>
+    </block>
+
+    <block wx:else>
+      <view class="fab-row">
+        <view class="mark-fab" bindtap="onEnterPickMode">
+          <text class="mark-fab-plus">+</text>
+          <text>标记治愈点</text>
+        </view>
+      </view>
+
+      <!-- DJI Fly 风格底部横向联动卡片流 -->
+      <swiper
+        wx:if="{{filteredSpots.length > 0}}"
+        class="spot-swiper"
+        current="{{currentCardIndex}}"
+        previous-margin="28rpx"
+        next-margin="28rpx"
+        bindchange="onSwiperChange"
+      >
+        <swiper-item wx:for="{{filteredSpots}}" wx:key="id" class="spot-swiper-item">
+          <view class="spot-card liquid-dock" data-id="{{item.id}}" bindtap="openSpotDetail">
+            <view class="spot-top">
+              <view class="spot-cover-wrap">
+                <image class="spot-cover" src="{{item.coverUrl}}" mode="aspectFill" />
+                <view class="spot-cat-tag">{{item.catEmoji}} {{item.catLabel}}</view>
+              </view>
+              <view class="spot-info">
+                <view class="spot-head">
+                  <text class="spot-name">{{item.name}}</text>
+                  <text class="spot-rate">★ {{item.ratingText}}</text>
+                </view>
+                <view class="spot-meta-row">
+                  <text class="spot-dist">📍 {{item.distanceText}}</text>
+                  <view class="quiet-pill" style="background: {{item.quietBg}}; color: {{item.quietColor}};">
+                    <view class="quiet-dot" style="background: {{item.quietDot}};"></view>
+                    <text>{{item.quietLabel}}</text>
+                  </view>
+                </view>
+                <text class="spot-desc">{{item.recommendation}}</text>
+              </view>
+            </view>
+
+            <view class="spot-foot">
+              <view
+                class="like-pill {{item.likedByMe ? 'like-pill-active' : ''}}"
+                data-id="{{item.id}}"
+                catchtap="onToggleLike"
+              >
+                <text>{{item.likedByMe ? '❤️' : '🤍'}} {{item.likes}}</text>
+              </view>
+              <view class="go-pill" data-id="{{item.id}}" catchtap="openSpotDetail">
+                <text>去这里 · 详情 ›</text>
+              </view>
+            </view>
+          </view>
+        </swiper-item>
+      </swiper>
+
+      <view wx:else class="empty-card liquid-dock">
+        <text>该分类暂无点位，点上方「+ 标记治愈点」成为首发探索者 ✨</text>
+      </view>
+    </block>
+  </view>
+
+  <!-- 点位详情三段式 Bottom Sheet -->
+  <view wx:if="{{detailSpot}}" class="sheet-mask" bindtap="closeSpotDetail">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view>
+          <view class="sheet-title">{{detailSpot.name}}</view>
+          <view class="sheet-subtitle">{{detailSpot.catEmoji}} {{detailSpot.catLabel}} · 距你 {{detailSpot.distanceText}} · ★ {{detailSpot.ratingText}}</view>
+        </view>
+        <view class="sheet-close" bindtap="closeSpotDetail">✕</view>
+      </view>
+
+      <scroll-view scroll-y class="sheet-body">
+        <image class="detail-cover" src="{{detailSpot.coverUrl}}" mode="aspectFill" />
+        <view class="detail-quote">“{{detailSpot.recommendation}}”</view>
+
+        <!-- 一键更新此刻安静度 -->
+        <view class="detail-section">
+          <view class="section-head">
+            <text class="section-title">一键更新此刻安静度</text>
+            <text class="section-sub">{{detailSpot.quietUpdatedAt}}</text>
+          </view>
+          <view class="quiet-btn-row">
+            <view
+              class="quiet-btn {{detailSpot.quietStatus === 'very_quiet' ? 'quiet-btn-active' : ''}}"
+              data-status="very_quiet"
+              bindtap="onUpdateQuiet"
+            >很安静</view>
+            <view
+              class="quiet-btn {{detailSpot.quietStatus === 'moderate' ? 'quiet-btn-active' : ''}}"
+              data-status="moderate"
+              bindtap="onUpdateQuiet"
+            >人不多</view>
+            <view
+              class="quiet-btn {{detailSpot.quietStatus === 'crowded' ? 'quiet-btn-active' : ''}}"
+              data-status="crowded"
+              bindtap="onUpdateQuiet"
+            >有点吵</view>
+          </view>
+        </view>
+
+        <!-- 同学匿名打卡 -->
+        <view class="detail-section">
+          <view class="section-head">
+            <text class="section-title">同学打卡 ({{detailSpot.reviews.length}})</text>
+          </view>
+          <view class="review-input-row">
+            <input
+              class="review-input"
+              value="{{reviewDraft}}"
+              placeholder="写一句此刻的治愈感受…"
+              bindinput="onReviewInput"
+            />
+            <view class="review-send" bindtap="onSubmitReview">发送</view>
+          </view>
+          <view wx:for="{{detailSpot.reviews}}" wx:key="id" class="review-item">
+            <view class="review-meta">
+              <text class="review-author">{{item.author}}</text>
+              <text class="review-time">{{item.moodTag}} · {{item.createdAt}}</text>
+            </view>
+            <text class="review-content">{{item.content}}</text>
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="sheet-footer">
+        <button class="ios-btn-ghost flex-1" data-id="{{detailSpot.id}}" bindtap="onToggleLike">
+          {{detailSpot.likedByMe ? '❤️ 已赞' : '🤍 点赞'}} ({{detailSpot.likes}})
+        </button>
+        <button class="ios-btn-primary flex-15" bindtap="onOpenNativeNav">
+          微信地图导航去这里
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- UGC 标记新治愈点 Sheet -->
+  <view wx:if="{{addModalVisible}}" class="sheet-mask" bindtap="closeAddModal">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view>
+          <view class="sheet-title">标记新的校园治愈点</view>
+          <view class="sheet-subtitle">{{geoSuggestionAddress || pickCoordText}}</view>
+        </view>
+        <view class="sheet-close" bindtap="closeAddModal">✕</view>
+      </view>
+
+      <scroll-view scroll-y class="sheet-body">
+        <view class="ugc-photo-box" bindtap="onChooseSpotPhoto">
+          <image class="ugc-photo-preview" src="{{ugcCoverUrl}}" mode="aspectFill" />
+          <view class="ugc-photo-btn">📷 拍照 / 从相册选图</view>
+        </view>
+
+        <scroll-view scroll-x enable-flex class="preset-scroll" show-scrollbar="{{false}}">
+          <view
+            wx:for="{{presetPhotos}}"
+            wx:key="id"
+            class="preset-chip {{ugcCoverUrl === item.url ? 'preset-chip-active' : ''}}"
+            data-url="{{item.url}}"
+            bindtap="onSelectPresetPhoto"
+          >{{item.label}}</view>
+        </scroll-view>
+
+        <view class="form-group">
+          <text class="form-label">地点名称 *</text>
+          <input class="form-input" value="{{ugcName}}" maxlength="28" placeholder="例如：明德楼西侧吹风连廊" bindinput="onUgcName" />
+        </view>
+
+        <view class="form-group">
+          <text class="form-label">治愈分类</text>
+          <view class="tag-wrap">
+            <view
+              wx:for="{{selectableCategories}}"
+              wx:key="id"
+              class="tag-chip {{ugcCategory === item.id ? 'tag-chip-active' : ''}}"
+              data-id="{{item.id}}"
+              bindtap="onUgcCat"
+            >{{item.emoji}} {{item.label}}</view>
+          </view>
+        </view>
+
+        <view class="form-group">
+          <text class="form-label">安静指数（{{ugcRating}} 星）</text>
+          <view class="star-row">
+            <text
+              wx:for="{{[1,2,3,4,5]}}"
+              wx:key="*this"
+              class="star-btn {{item <= ugcRating ? 'star-on' : ''}}"
+              data-star="{{item}}"
+              bindtap="onUgcStar"
+            >★</text>
+          </view>
+        </view>
+
+        <view class="form-group">
+          <text class="form-label">写一句安利理由 *</text>
+          <textarea class="form-textarea" value="{{ugcReason}}" maxlength="120" placeholder="几点来最治愈？有没有风、插座或亲人小猫？" bindinput="onUgcReason" />
+        </view>
+      </scroll-view>
+
+      <view class="sheet-footer">
+        <button class="ios-btn-ghost flex-1" bindtap="closeAddModal">取消</button>
+        <button class="ios-btn-primary flex-15" bindtap="onSubmitAddSpot">发布到治愈地图</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 非强制登录与个人资料弹窗 -->
+  <auth-sheet visible="{{authVisible}}" reason="{{authReason}}" bind:close="closeAuth" bind:success="onAuthSuccess" />
+  <profile-sheet visible="{{profileVisible}}" user="{{user}}" bind:close="closeProfile" bind:updated="onProfileUpdated" bind:logout="onLogout" />
+</view>

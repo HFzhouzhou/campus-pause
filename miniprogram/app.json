@@ -1,0 +1,38 @@
+{
+  "pages": [
+    "pages/map/map",
+    "pages/vent/vent",
+    "pages/microstep/microstep",
+    "pages/buddy/buddy"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#F2F2F7",
+    "navigationBarTitleText": "校园暂停键",
+    "navigationBarTextStyle": "black",
+    "navigationStyle": "custom",
+    "backgroundColor": "#F2F2F7"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#64748B",
+    "selectedColor": "#007AFF",
+    "backgroundColor": "#FFFFFF",
+    "list": [
+      { "pagePath": "pages/map/map", "text": "治愈地图" },
+      { "pagePath": "pages/vent/vent", "text": "情绪粉碎" },
+      { "pagePath": "pages/microstep/microstep", "text": "微步拆解" },
+      { "pagePath": "pages/buddy/buddy", "text": "限时搭子" }
+    ]
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于展示你在广西外国语学院五合校区附近的位置与治愈点距离"
+    }
+  },
+  "requiredPrivateInfos": [
+    "getLocation"
+  ],
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

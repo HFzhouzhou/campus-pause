@@ -1,0 +1,258 @@
+/* Apple iOS 26 Light Mode + Liquid Glass 全局样式系统 */
+page {
+  background-color: #f2f2f7;
+  color: #1d1d1f;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+    'PingFang SC', 'Helvetica Neue', sans-serif;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+view,
+text,
+scroll-view,
+input,
+textarea,
+button {
+  box-sizing: border-box;
+}
+
+button::after {
+  border: none;
+}
+
+/* 温和明亮的 iOS 分组氛围底 */
+.ios-canvas {
+  min-height: 100vh;
+  background:
+    radial-gradient(65% 40% at 10% 0%, rgba(56, 189, 248, 0.14) 0%, transparent 65%),
+    radial-gradient(60% 38% at 92% 8%, rgba(167, 139, 250, 0.12) 0%, transparent 65%),
+    #f2f2f7;
+}
+
+/* 标准 iOS 卡片 */
+.ios-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1rpx solid rgba(255, 255, 255, 0.95);
+  border-radius: 44rpx;
+  box-shadow:
+    0 2rpx 6rpx rgba(15, 23, 42, 0.04),
+    0 16rpx 40rpx -12rpx rgba(15, 23, 42, 0.09);
+}
+
+/* 苹果浅色液态玻璃 HUD 材质 */
+.liquid-glass {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.86) 0%,
+    rgba(255, 255, 255, 0.72) 55%,
+    rgba(255, 255, 255, 0.82) 100%
+  );
+  backdrop-filter: blur(28px) saturate(195%);
+  -webkit-backdrop-filter: blur(28px) saturate(195%);
+  border: 1rpx solid rgba(255, 255, 255, 0.92);
+  box-shadow:
+    inset 0 2rpx 1rpx rgba(255, 255, 255, 1),
+    0 12rpx 32rpx -8rpx rgba(15, 23, 42, 0.14);
+}
+
+.liquid-dock {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.86) 0%,
+    rgba(255, 255, 255, 0.72) 55%,
+    rgba(255, 255, 255, 0.82) 100%
+  );
+  backdrop-filter: blur(36px) saturate(210%);
+  -webkit-backdrop-filter: blur(36px) saturate(210%);
+  border: 1rpx solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    inset 0 2rpx 2rpx rgba(255, 255, 255, 1),
+    0 20rpx 48rpx -10rpx rgba(15, 23, 42, 0.2),
+    0 4rpx 14rpx rgba(15, 23, 42, 0.06);
+}
+
+/* 顶部账号液态胶囊 */
+.account-pill {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 8rpx 22rpx 8rpx 10rpx;
+  border-radius: 999rpx;
+}
+
+.account-pill-guest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12rpx 28rpx;
+  border-radius: 999rpx;
+  font-size: 25rpx;
+  font-weight: 600;
+  color: #007aff;
+}
+
+.account-avatar {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 999rpx;
+  border: 2rpx solid #ffffff;
+  background: #e5e7eb;
+}
+
+.account-name {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #1d1d1f;
+  max-width: 140rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* iOS 主按钮与次按钮 */
+.ios-btn-primary {
+  background: #007aff;
+  color: #ffffff;
+  font-size: 28rpx;
+  font-weight: 600;
+  border-radius: 999rpx;
+  padding: 22rpx 32rpx;
+  line-height: 1.2;
+  box-shadow: 0 12rpx 28rpx rgba(0, 122, 255, 0.24);
+}
+
+.ios-btn-primary:active {
+  opacity: 0.88;
+  transform: scale(0.98);
+}
+
+.ios-btn-dark {
+  background: #1d1d1f;
+  color: #ffffff;
+  font-size: 28rpx;
+  font-weight: 600;
+  border-radius: 999rpx;
+  padding: 22rpx 32rpx;
+  line-height: 1.2;
+  box-shadow: 0 12rpx 28rpx rgba(15, 23, 42, 0.2);
+}
+
+.ios-btn-ghost {
+  background: #f2f2f7;
+  color: #475569;
+  font-size: 28rpx;
+  font-weight: 600;
+  border-radius: 999rpx;
+  padding: 22rpx 32rpx;
+  line-height: 1.2;
+}
+
+/* 通用三段式 iOS Bottom Sheet（顶部固定 + 中间安全滚动 + 底部固定，绝不截断！） */
+.sheet-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 900;
+  background: rgba(15, 23, 42, 0.36);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sheet-panel {
+  width: 100%;
+  max-height: 86vh;
+  background: #ffffff;
+  border-top-left-radius: 48rpx;
+  border-top-right-radius: 48rpx;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 -16rpx 60rpx rgba(15, 23, 42, 0.16);
+  animation: sheetSlideUp 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes sheetSlideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.sheet-handle-wrap {
+  display: flex;
+  justify-content: center;
+  padding-top: 18rpx;
+  padding-bottom: 8rpx;
+  flex-shrink: 0;
+}
+
+.sheet-handle {
+  width: 72rpx;
+  height: 8rpx;
+  border-radius: 999rpx;
+  background: #d1d5db;
+}
+
+.sheet-header {
+  padding: 12rpx 36rpx 24rpx;
+  border-bottom: 1rpx solid #f1f5f9;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.sheet-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #1d1d1f;
+  letter-spacing: -0.5rpx;
+}
+
+.sheet-subtitle {
+  font-size: 23rpx;
+  color: #64748b;
+  margin-top: 6rpx;
+}
+
+.sheet-close {
+  width: 58rpx;
+  height: 58rpx;
+  border-radius: 999rpx;
+  background: #f2f2f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.sheet-body {
+  flex: 1;
+  min-height: 0;
+  max-height: 60vh;
+  padding: 28rpx 36rpx;
+}
+
+.sheet-footer {
+  padding: 20rpx 36rpx calc(26rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid #f1f5f9;
+  background: #ffffff;
+  display: flex;
+  gap: 20rpx;
+  flex-shrink: 0;
+}
+
+/* 页面底部避开悬浮液态胶囊 TabBar */
+.dock-spacer {
+  height: calc(176rpx + env(safe-area-inset-bottom));
+}

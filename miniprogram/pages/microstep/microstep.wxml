@@ -1,0 +1,177 @@
+<view class="ios-canvas ms-page" style="padding-top: {{statusBarHeight + 12}}px;">
+  <!-- 顶部标题（零“AI”字样，合规效率工具定位，免大模型备案） -->
+  <view class="page-header">
+    <view>
+      <text class="header-kicker">MICRO-STEP · 10分钟微行动</text>
+      <text class="header-title">微步拆解</text>
+      <text class="header-sub">把压得喘不过气的大任务，切成 3 个 10 分钟小步骤</text>
+    </view>
+    <view class="header-account">
+      <view wx:if="{{user}}" class="liquid-dock account-pill" bindtap="openProfile">
+        <image class="account-avatar" src="{{user.avatarUrl}}" mode="aspectFill" />
+        <text class="account-name">{{user.nickname}}</text>
+      </view>
+      <view wx:else class="liquid-dock account-pill-guest" bindtap="openAuthManual">登录</view>
+    </view>
+  </view>
+
+  <!-- 任务输入与高频场景库 -->
+  <view class="ios-card input-card">
+    <view class="scenario-tags">
+      <view
+        wx:for="{{quickScenarios}}"
+        wx:key="*this"
+        class="scenario-tag"
+        data-text="{{item}}"
+        bindtap="onTapScenario"
+      >{{item}}</view>
+    </view>
+
+    <view class="input-row">
+      <input
+        class="ms-input"
+        value="{{promptInput}}"
+        placeholder="输入让你拖延的大事，如：后天考高数还没复习…"
+        placeholder-style="color: #94A3B8;"
+        confirm-type="done"
+        bindinput="onPromptInput"
+        bindconfirm="onGenerate"
+      />
+    </view>
+
+    <button
+      class="ios-btn-primary gen-btn"
+      disabled="{{!promptInput}}"
+      bindtap="onGenerate"
+    >
+      ✦ 拆成 3 个 10 分钟微步骤
+    </button>
+  </view>
+
+  <!-- 当前拆解结果（支持打钩、手动微调、启动 10 分钟倒计时） -->
+  <view wx:if="{{activePlan}}" class="plan-wrap">
+    <view class="ios-card empathy-card">
+      <view class="empathy-top">
+        <text class="empathy-goal">{{activePlan.prompt}}</text>
+        <text class="empathy-progress">{{completedCount}} / {{activePlan.steps.length}} 已完成</text>
+      </view>
+      <text class="empathy-note">“{{activePlan.empathyNote}}”</text>
+      <view class="prog-track">
+        <view class="prog-fill" style="width: {{progressPercent}}%;"></view>
+      </view>
+    </view>
+
+    <view
+      wx:for="{{activePlan.steps}}"
+      wx:key="id"
+      class="ios-card step-card {{item.completed ? 'step-done' : ''}}"
+    >
+      <view class="step-row">
+        <view class="step-check {{item.completed ? 'step-check-on' : ''}}" data-id="{{item.id}}" bindtap="onToggleStep">
+          <text>{{item.completed ? '✓' : ''}}</text>
+        </view>
+        <view class="step-body">
+          <view class="step-head">
+            <text class="step-title {{item.completed ? 'step-title-done' : ''}}">0{{index + 1}} · {{item.title}}</text>
+            <text class="step-min">{{item.durationMinutes}}m</text>
+          </view>
+          <text class="step-detail">{{item.detail}}</text>
+
+          <view class="step-actions">
+            <view class="edit-link" data-id="{{item.id}}" bindtap="openEditStep">微调内容</view>
+            <view class="focus-btn" data-id="{{item.id}}" bindtap="openTimer">
+              ▶ {{item.completed ? '再专注 10 分钟' : '开启 10 分钟专注'}}
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 最近拆解历史 -->
+  <view wx:if="{{history.length > 1}}" class="history-wrap">
+    <text class="history-label">最近拆解记录</text>
+    <scroll-view scroll-x enable-flex class="history-scroll" show-scrollbar="{{false}}">
+      <view
+        wx:for="{{history}}"
+        wx:key="id"
+        class="history-chip {{activePlan && activePlan.id === item.id ? 'history-chip-active' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="onSelectHistory"
+      >{{item.prompt}}</view>
+    </scroll-view>
+  </view>
+
+  <view class="dock-spacer"></view>
+
+  <!-- 10 分钟专注倒计时 Sheet -->
+  <view wx:if="{{timerStep}}" class="sheet-mask" bindtap="closeTimer">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view>
+          <view class="sheet-title">10 分钟微行动专注舱</view>
+          <view class="sheet-subtitle">{{timerStep.title}}</view>
+        </view>
+        <view class="sheet-close" bindtap="closeTimer">✕</view>
+      </view>
+
+      <view class="timer-body">
+        <text class="timer-detail">{{timerStep.detail}}</text>
+
+        <view class="timer-circle {{timerDone ? 'timer-circle-done' : ''}}">
+          <block wx:if="{{timerDone}}">
+            <text class="done-icon">🎉</text>
+            <text class="done-txt">微行动完成！</text>
+            <text class="done-sub">你已战胜启动阻力</text>
+          </block>
+          <block wx:else>
+            <text class="timer-clock">{{timerText}}</text>
+            <text class="timer-state">{{timerRunning ? '只管推进这一小步' : '已暂停呼吸一下'}}</text>
+          </block>
+        </view>
+
+        <view wx:if="{{!timerDone}}" class="demo-speed" bindtap="onQuickDemo5s">
+          ⏩ 演示快捷：切换为 5 秒极速倒计时体验庆祝
+        </view>
+      </view>
+
+      <view class="sheet-footer">
+        <block wx:if="{{timerDone}}">
+          <button class="ios-btn-primary full-w" bindtap="closeTimer">收下掌控感，返回下一步</button>
+        </block>
+        <block wx:else>
+          <button class="ios-btn-ghost flex-1" bindtap="toggleTimerRun">{{timerRunning ? '暂停' : '继续'}}</button>
+          <button class="ios-btn-primary flex-15" bindtap="finishTimerNow">✓ 提前完成打钩</button>
+        </block>
+      </view>
+    </view>
+  </view>
+
+  <!-- 自定义微调步骤 Sheet -->
+  <view wx:if="{{editingStep}}" class="sheet-mask" bindtap="closeEditStep">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view>
+          <view class="sheet-title">微调这一小步</view>
+          <view class="sheet-subtitle">改成更贴合你此刻节奏的 10 分钟行动</view>
+        </view>
+        <view class="sheet-close" bindtap="closeEditStep">✕</view>
+      </view>
+      <view class="edit-body">
+        <text class="edit-label">步骤标题</text>
+        <input class="edit-input" value="{{editTitle}}" bindinput="onEditTitle" />
+        <text class="edit-label">行动细节</text>
+        <textarea class="edit-textarea" value="{{editDetail}}" bindinput="onEditDetail" />
+      </view>
+      <view class="sheet-footer">
+        <button class="ios-btn-ghost flex-1" bindtap="closeEditStep">取消</button>
+        <button class="ios-btn-primary flex-15" bindtap="saveEditStep">保存微调</button>
+      </view>
+    </view>
+  </view>
+
+  <auth-sheet visible="{{authVisible}}" reason="{{authReason}}" bind:close="closeAuth" bind:success="onAuthSuccess" />
+  <profile-sheet visible="{{profileVisible}}" user="{{user}}" bind:close="closeProfile" bind:updated="onProfileUpdated" bind:logout="onLogout" />
+</view>
