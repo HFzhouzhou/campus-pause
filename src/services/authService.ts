@@ -3,6 +3,7 @@ import { readStorage, writeStorage } from './storage';
 import { CAMPUS_INFO } from '../utils/geo';
 
 const USER_KEY = 'auth_user_profile';
+const TOKEN_KEY = 'auth_session_token';
 const OTP_KEY = 'auth_pending_otp';
 
 interface StoredOtp {
@@ -20,7 +21,16 @@ export const PRESET_AVATARS = [
 ];
 
 function getAuthApiBase(): string {
-  return (import.meta.env.VITE_AUTH_API_BASE || '').trim().replace(/\/$/, '');
+  const configured = (import.meta.env.VITE_AUTH_API_BASE || '').trim();
+  if (configured) return configured.replace(/\/$/, '');
+  // 线上部署在 https://8.148.11.126/campus-pause/ 时默认自动走同源 /campus-pause-api
+  if (
+    typeof window !== 'undefined' &&
+    window.location.pathname.startsWith('/campus-pause')
+  ) {
+    return '/campus-pause-api';
+  }
+  return '';
 }
 
 export function isValidEmail(email: string): boolean {
@@ -32,15 +42,16 @@ export function isRealEmailBackendConfigured(): boolean {
 }
 
 export const authService = {
-  /** 获取当前登录用户（未登录返回 null，支持游客先浏览） */
   getCurrentUser(): UserProfile | null {
     return readStorage<UserProfile | null>(USER_KEY, null);
   },
 
+  getToken(): string | null {
+    return readStorage<string | null>(TOKEN_KEY, null);
+  },
+
   /**
-   * 发送邮箱 6 位验证码
-   * - 配置了 VITE_AUTH_API_BASE 时：调用真实后端 POST /auth/send-code 触发 SMTP 真实发信
-   * - 未配置后端发信服务时：自动降级为前端体验验证码模式，返回 demoCode 供立即测试完整流程
+   * 发送邮箱 6 位验证码（真实 163 SMTP 发信接口优先）
    */
   async sendEmailCode(
     rawEmail: string
@@ -57,14 +68,14 @@ export const authService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || '验证码发送失败，请稍后重试');
+        throw new Error(data.message || '验证码发送失败，请稍后重试');
       }
       return { mode: 'api' };
     }
 
-    // 体验模式：生成 6 位数字验证码并设置 5 分钟有效期
+    // 未配置后端时的体验模式兜底
     await new Promise((r) => setTimeout(r, 450));
     const code = String(Math.floor(100000 + Math.random() * 900000));
     writeStorage<StoredOtp>(OTP_KEY, {
@@ -76,7 +87,7 @@ export const authService = {
   },
 
   /**
-   * 校验邮箱验证码并完成注册/登录（未注册自动注册，已注册直接登录）
+   * 校验邮箱 6 位验证码并完成登录/注册
    */
   async verifyEmailAndLogin(
     rawEmail: string,
@@ -99,13 +110,15 @@ export const authService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code, nickname: optionalNickname }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || '验证码无效或已过期');
+        throw new Error(data.message || '验证码无效或已过期');
       }
-      const data = (await res.json()) as { user: UserProfile };
+      if (data.token) {
+        writeStorage(TOKEN_KEY, data.token);
+      }
       writeStorage(USER_KEY, data.user);
-      return data.user;
+      return data.user as UserProfile;
     }
 
     // 体验模式本地核验
@@ -140,9 +153,11 @@ export const authService = {
   },
 
   /**
-   * 更新用户昵称或头像（Web 端个人资料修改 & 微信小程序头像昵称授权通用落库入口）
+   * 更新昵称或头像（同步至本地与后端 SQLite，也供微信小程序头像昵称授权落库）
    */
-  updateProfile(patch: Partial<Pick<UserProfile, 'nickname' | 'avatarUrl' | 'schoolName'>>): UserProfile | null {
+  updateProfile(
+    patch: Partial<Pick<UserProfile, 'nickname' | 'avatarUrl' | 'schoolName'>>
+  ): UserProfile | null {
     const current = this.getCurrentUser();
     if (!current) return null;
     const updated: UserProfile = {
@@ -152,17 +167,33 @@ export const authService = {
       schoolName: patch.schoolName || current.schoolName,
     };
     writeStorage(USER_KEY, updated);
+
+    const apiBase = getAuthApiBase();
+    const token = this.getToken();
+    if (apiBase && token) {
+      fetch(`${apiBase}/auth/profile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          nickname: updated.nickname,
+          avatarUrl: updated.avatarUrl,
+          schoolName: updated.schoolName,
+        }),
+      }).catch(() => {});
+    }
+
     return updated;
   },
 
   /**
-   * 【预留接口】微信小程序一键登录（供后续迁移至微信小程序时对接）
-   * 调用流程：
-   * 1) 小程序端调用 wx.login() 获取临时登录凭证 code
-   * 2) 将 code 传给后端 POST /auth/wechat-miniprogram，后端调微信 jscode2session 换取 openid / unionid
-   * 3) 返回标准 UserProfile 并持久化登录态
+   * 【预留接口】微信小程序一键登录 (wx.login -> POST /auth/wechat-miniprogram)
    */
-  async loginWithWeChatMiniProgram(payload: WeChatProfilePayload): Promise<UserProfile> {
+  async loginWithWeChatMiniProgram(
+    payload: WeChatProfilePayload
+  ): Promise<UserProfile> {
     const apiBase = getAuthApiBase();
     if (apiBase && payload.wxCode) {
       const res = await fetch(`${apiBase}/auth/wechat-miniprogram`, {
@@ -170,23 +201,24 @@ export const authService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error('微信授权登录失败');
+        throw new Error(data.message || '微信授权登录失败');
       }
-      const data = (await res.json()) as { user: UserProfile };
+      if (data.token) writeStorage(TOKEN_KEY, data.token);
       writeStorage(USER_KEY, data.user);
-      return data.user;
+      return data.user as UserProfile;
     }
 
     throw new Error('当前为 Web 浏览器环境，请在微信小程序内使用微信一键登录');
   },
 
   /**
-   * 【预留接口】同步微信授权头像与昵称
-   * 小程序端通过 <button open-type="chooseAvatar" bindchooseavatar> 和 <input type="nickname">
-   * 获取到的临时头像/昵称上传至云存储后，直接调用本方法写入当前用户资料。
+   * 【预留接口】微信小程序头像昵称授权同步
    */
-  syncWeChatProfile(payload: Pick<WeChatProfilePayload, 'nickName' | 'avatarUrl'>): UserProfile | null {
+  syncWeChatProfile(
+    payload: Pick<WeChatProfilePayload, 'nickName' | 'avatarUrl'>
+  ): UserProfile | null {
     return this.updateProfile({
       nickname: payload.nickName,
       avatarUrl: payload.avatarUrl,
@@ -196,6 +228,7 @@ export const authService = {
   logout(): void {
     try {
       window.localStorage.removeItem('campus_pause_gxufl_v2_' + USER_KEY);
+      window.localStorage.removeItem('campus_pause_gxufl_v2_' + TOKEN_KEY);
     } catch {
       // ignore
     }
