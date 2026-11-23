@@ -10,6 +10,7 @@ dist/
 .env.local
 .env.*.local
 miniprogram/utils/config.local.js
+miniprogram-nolocation/utils/config.local.js
 
 # Editor & OS
 .DS_Store

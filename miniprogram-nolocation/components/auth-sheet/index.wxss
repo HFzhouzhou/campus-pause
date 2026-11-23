@@ -1,0 +1,269 @@
+.header-text-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.badge-pill {
+  display: inline-block;
+  padding: 6rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(0, 122, 255, 0.1);
+  color: #007aff;
+  font-size: 21rpx;
+  font-weight: 600;
+  margin-bottom: 10rpx;
+}
+
+.badge-green {
+  background: #ecfdf5;
+  color: #15803d;
+}
+
+.mode-segment {
+  display: flex;
+  background: #f2f2f7;
+  border-radius: 26rpx;
+  padding: 8rpx;
+  margin-bottom: 28rpx;
+}
+
+.mode-btn {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  border-radius: 20rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.mode-btn-active {
+  background: #ffffff;
+  color: #1d1d1f;
+  box-shadow: 0 4rpx 12rpx rgba(15, 23, 42, 0.08);
+}
+
+.auth-block {
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+}
+
+.wx-hero-card {
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+  padding: 22rpx;
+  border-radius: 30rpx;
+  background: linear-gradient(145deg, #f8fafc 0%, #f2f2f7 100%);
+  border: 1rpx solid rgba(15, 23, 42, 0.05);
+  margin-bottom: 28rpx;
+}
+
+.wx-avatar-btn {
+  position: relative;
+  width: 120rpx !important;
+  height: 120rpx !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 999rpx !important;
+  overflow: hidden;
+  background: #e2e8f0 !important;
+  flex-shrink: 0;
+  line-height: 1 !important;
+  box-shadow: 0 6rpx 18rpx rgba(15, 23, 42, 0.1);
+}
+
+.wx-avatar-img {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 999rpx;
+  display: block;
+}
+
+.wx-avatar-tag {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.56);
+  color: #ffffff;
+  font-size: 16rpx;
+  line-height: 32rpx;
+  text-align: center;
+}
+
+.wx-hero-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wx-hero-title {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #1d1d1f;
+  margin-bottom: 10rpx;
+}
+
+.wx-inline-nick {
+  width: 100%;
+  height: 68rpx;
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 0 20rpx;
+  font-size: 24rpx;
+  color: #1d1d1f;
+}
+
+/* Step 2 完善微信头像昵称引导 */
+.onboard-avatar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.onboard-avatar-btn {
+  position: relative;
+  width: 168rpx !important;
+  height: 168rpx !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 999rpx !important;
+  overflow: hidden;
+  background: #f2f2f7 !important;
+  border: 6rpx solid #ffffff !important;
+  box-shadow: 0 12rpx 32rpx rgba(0, 122, 255, 0.18);
+  line-height: 1 !important;
+}
+
+.onboard-avatar-img {
+  width: 156rpx;
+  height: 156rpx;
+  border-radius: 999rpx;
+  display: block;
+}
+
+.onboard-avatar-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 122, 255, 0.82);
+  color: #ffffff;
+  font-size: 19rpx;
+  font-weight: 600;
+  line-height: 42rpx;
+  text-align: center;
+}
+
+.onboard-hint {
+  font-size: 22rpx;
+  color: #64748b;
+  margin-top: 14rpx;
+}
+
+.onboard-input {
+  border: 2rpx solid rgba(0, 122, 255, 0.25);
+  background: #f8fafc;
+}
+
+.preset-mini-row {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin-bottom: 26rpx;
+}
+
+.preset-mini-label {
+  font-size: 21rpx;
+  color: #94a3b8;
+}
+
+.preset-mini {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 999rpx;
+  border: 3rpx solid transparent;
+}
+
+.preset-mini-on {
+  border-color: #007aff;
+  transform: scale(1.08);
+}
+
+.submit-reset-btn {
+  width: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  line-height: 88rpx !important;
+}
+
+.skip-link {
+  text-align: center;
+  font-size: 23rpx;
+  color: #94a3b8;
+  padding: 22rpx 0 10rpx;
+}
+
+.field-group {
+  margin-bottom: 24rpx;
+}
+
+.field-label {
+  display: block;
+  font-size: 23rpx;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 10rpx;
+}
+
+.ios-input {
+  width: 100%;
+  height: 84rpx;
+  background: #f2f2f7;
+  border-radius: 24rpx;
+  padding: 0 26rpx;
+  font-size: 27rpx;
+  color: #1d1d1f;
+}
+
+.code-row {
+  display: flex;
+  gap: 16rpx;
+  align-items: center;
+}
+
+.code-input {
+  flex: 1;
+  letter-spacing: 6rpx;
+}
+
+.send-code-btn {
+  height: 84rpx;
+  padding: 0 28rpx;
+  border-radius: 24rpx;
+  background: rgba(0, 122, 255, 0.12);
+  color: #007aff;
+  font-size: 24rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.error-text {
+  color: #ff3b30;
+  font-size: 24rpx;
+  font-weight: 500;
+  margin-bottom: 18rpx;
+}
+
+.auth-tip {
+  text-align: center;
+  font-size: 22rpx;
+  color: #94a3b8;
+  margin-top: 22rpx;
+}

@@ -1,0 +1,257 @@
+<view class="ios-canvas buddy-page" style="padding-top: {{menuTop}}px;">
+  <!-- 顶部与微信胶囊对齐的导航栏 -->
+  <view class="ios-nav-row" style="height: {{menuHeight}}px; padding-right: {{menuRightSpace}}px;">
+    <view wx:if="{{user}}" class="liquid-dock account-pill" hover-class="tap-active" bindtap="openProfile">
+      <image class="account-avatar" src="{{user.avatarUrl}}" mode="aspectFill" />
+      <text class="account-name">{{user.nickname}}</text>
+    </view>
+    <view wx:else class="liquid-dock account-pill-guest" hover-class="tap-active" bindtap="openAuthManual">登录</view>
+  </view>
+
+  <view class="page-head-block">
+    <text class="header-kicker">ZERO-BURDEN BUDDY · 五合校区</text>
+    <text class="header-title">无负担限时搭子</text>
+    <text class="header-sub">只陪 30 分钟，到点自动解散，不维系社交关系</text>
+  </view>
+
+  <!-- 分类胶囊 + 发起按钮（禁用 enable-flex + 明确行高，绝不拉伸变形） -->
+  <view class="toolbar">
+    <scroll-view scroll-x class="cat-scroll" show-scrollbar="{{false}}">
+      <view
+        wx:for="{{categories}}"
+        wx:key="id"
+        class="cat-pill {{activeCategory === item.id ? 'cat-pill-active' : ''}}"
+        hover-class="tap-active"
+        data-id="{{item.id}}"
+        bindtap="onSelectCategory"
+      >{{item.emoji}} {{item.label}}</view>
+    </scroll-view>
+
+    <view class="ios-btn ios-btn-primary" hover-class="tap-active" bindtap="onOpenCreate">
+      + 发起 30 分钟限时搭子
+    </view>
+  </view>
+
+  <!-- 限时搭子卡片流 -->
+  <view class="buddy-list">
+    <view
+      wx:for="{{filteredBuddies}}"
+      wx:key="id"
+      class="ios-card buddy-card {{item.joinedByMe ? 'buddy-card-joined' : ''}}"
+    >
+      <view class="card-top">
+        <view class="countdown-pill {{item.isExpired ? 'countdown-expired' : ''}}">
+          <view wx:if="{{!item.isExpired}}" class="live-dot"></view>
+          <text>{{item.isExpired ? '已自动解散' : '剩 ' + item.remainingText}}</text>
+        </view>
+        <view class="card-badges">
+          <text wx:if="{{item.isSilent}}" class="silent-pill">可静音</text>
+          <text class="count-pill">{{item.joinedCount}}/{{item.maxPeople}} 人</text>
+        </view>
+      </view>
+
+      <view class="buddy-title-row">
+        <text class="buddy-emoji">{{item.catEmoji}}</text>
+        <text class="buddy-title">{{item.title}}</text>
+      </view>
+      <text class="buddy-note">{{item.vibeNote}}</text>
+
+      <view class="buddy-meta-strip">
+        <view class="host-monogram">{{item.hostInitial}}</view>
+        <view class="buddy-loc">
+          <text class="loc-main">{{item.location}}</text>
+          <text class="loc-host">发起人 · {{item.hostAlias}}</text>
+        </view>
+      </view>
+
+      <view class="boundary-pill">🛡️ {{item.boundaryTag}}</view>
+
+      <view class="card-foot">
+        <text class="cipher-hint {{item.joinedByMe ? 'cipher-hint-unlocked' : ''}}">
+          {{item.joinedByMe ? '🔑 暗号：' + item.cipher : '🔒 举手后解锁接头暗号'}}
+        </text>
+        <view
+          class="join-btn {{item.joinedByMe ? 'join-btn-joined' : item.isFull || item.isExpired ? 'join-btn-disabled' : ''}}"
+          hover-class="tap-active"
+          data-id="{{item.id}}"
+          bindtap="onJoinTap"
+        >
+          {{item.joinedByMe ? '打开频道' : item.isFull ? '已满员' : '举手加入'}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="dock-spacer"></view>
+
+  <!-- 1) 苹果 Wallet 暗号 + iMessage 临时频道三段式 Sheet -->
+  <view wx:if="{{activeCipherBuddy}}" class="sheet-mask" bindtap="closeCipher">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view class="header-text-wrap">
+          <view class="joined-tag">已举手 · 临时暗号频道</view>
+          <view class="sheet-title">{{activeCipherBuddy.title}}</view>
+        </view>
+        <view class="sheet-close" hover-class="tap-active" bindtap="closeCipher">✕</view>
+      </view>
+
+      <scroll-view scroll-y class="cipher-scroll">
+        <view class="sheet-inner">
+          <view class="wallet-card">
+            <view class="wallet-shine"></view>
+            <view class="wallet-top">
+              <text class="wallet-k">CAMPUS PASS · 接头暗号</text>
+              <text class="wallet-time">剩 {{cipherRemaining}}</text>
+            </view>
+            <text class="wallet-cipher">“{{activeCipherBuddy.cipher}}”</text>
+            <view class="wallet-tear-wrap">
+              <view class="wallet-notch wallet-notch-l"></view>
+              <view class="wallet-tear-line"></view>
+              <view class="wallet-notch wallet-notch-r"></view>
+            </view>
+            <view class="wallet-foot">
+              <text>📍 {{activeCipherBuddy.location}}</text>
+              <text>{{activeCipherBuddy.joinedCount}}/{{activeCipherBuddy.maxPeople}} 人已就位</text>
+            </view>
+          </view>
+
+          <view class="cipher-rule">{{activeCipherBuddy.boundaryTag}} · 到点自动销毁临时消息</view>
+
+          <view class="chat-list">
+            <view
+              wx:for="{{activeCipherBuddy.quickMessages}}"
+              wx:key="id"
+              class="chat-item {{item.isMe ? 'chat-me' : 'chat-other'}}"
+            >
+              <text class="chat-meta">{{item.sender}} · {{item.time}}</text>
+              <view class="chat-bubble {{item.isMe ? 'bubble-me' : 'bubble-other'}}">{{item.text}}</view>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="cipher-footer">
+        <scroll-view scroll-x class="phrase-scroll" show-scrollbar="{{false}}">
+          <view
+            wx:for="{{quickMessages}}"
+            wx:key="*this"
+            class="phrase-chip"
+            hover-class="tap-active"
+            data-text="{{item}}"
+            bindtap="onSendQuickPhrase"
+          >{{item}}</view>
+        </scroll-view>
+
+        <view class="chat-input-row">
+          <input
+            class="chat-input"
+            value="{{msgDraft}}"
+            placeholder="发一句简短位置确认…"
+            placeholder-style="color: #94A3B8;"
+            confirm-type="send"
+            bindinput="onMsgInput"
+            bindconfirm="onSendCustomMsg"
+          />
+          <view class="chat-send" hover-class="tap-active" bindtap="onSendCustomMsg">发送</view>
+        </view>
+
+        <view class="leave-link" bindtap="onLeaveBuddy">临时有事，悄悄退出本次搭子</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 2) 发起 30 分钟限时搭子三段式 Sheet -->
+  <view wx:if="{{createVisible}}" class="sheet-mask" bindtap="closeCreate">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view class="header-text-wrap">
+          <view class="sheet-title">发起 30 分钟限时搭子</view>
+          <view class="sheet-subtitle">到点自动解散 · 不强制加微信 · 零社交包袱</view>
+        </view>
+        <view class="sheet-close" hover-class="tap-active" bindtap="closeCreate">✕</view>
+      </view>
+
+      <scroll-view scroll-y class="sheet-scroll">
+        <view class="sheet-inner">
+          <view class="form-group">
+            <text class="form-label">想一起做什么 *</text>
+            <input class="form-input" value="{{fTitle}}" maxlength="30" placeholder="例如：田径场吹风暴走不说话搭子" placeholder-style="color: #94A3B8;" bindinput="onFTitle" />
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">活动类型</text>
+            <view class="tag-wrap">
+              <view
+                wx:for="{{selectableCategories}}"
+                wx:key="id"
+                class="tag-chip {{fCategory === item.id ? 'tag-chip-active' : ''}}"
+                data-id="{{item.id}}"
+                bindtap="onFCategory"
+              >{{item.emoji}} {{item.label}}</view>
+            </view>
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">校园集合点 *</text>
+            <input class="form-input" value="{{fLocation}}" placeholder="例如：明德楼西侧观景连廊" placeholder-style="color: #94A3B8;" bindinput="onFLocation" />
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">接头暗号（防尴尬）</text>
+            <input class="form-input" value="{{fCipher}}" placeholder="例如：穿白卫衣拿冰美式" placeholder-style="color: #94A3B8;" bindinput="onFCipher" />
+          </view>
+
+          <view class="seg-grid">
+            <view class="seg-col">
+              <text class="form-label">限时时长</text>
+              <view class="seg-box">
+                <view
+                  wx:for="{{[20,30,45]}}"
+                  wx:key="*this"
+                  class="seg-item {{fDuration === item ? 'seg-active' : ''}}"
+                  data-val="{{item}}"
+                  bindtap="onFDuration"
+                >{{item}}m</view>
+              </view>
+            </view>
+            <view class="seg-col">
+              <text class="form-label">人数上限</text>
+              <view class="seg-box">
+                <view
+                  wx:for="{{[2,3,4]}}"
+                  wx:key="*this"
+                  class="seg-item {{fMaxPeople === item ? 'seg-active' : ''}}"
+                  data-val="{{item}}"
+                  bindtap="onFMaxPeople"
+                >{{item}}人</view>
+              </view>
+            </view>
+          </view>
+
+          <view class="silent-switch-row">
+            <view>
+              <text class="sw-title">允许全程不说话 / 戴耳机陪伴</text>
+              <text class="sw-sub">社恐极度友好，点头示意即可</text>
+            </view>
+            <switch checked="{{fIsSilent}}" color="#34C759" bindchange="onFSilent" />
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">补充氛围说明（选填）</text>
+            <textarea class="form-textarea" value="{{fNote}}" maxlength="90" placeholder="说明节奏偏好，如：走得慢一点、纯干饭不闲聊…" placeholder-style="color: #94A3B8;" bindinput="onFNote" />
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="sheet-footer">
+        <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="closeCreate">取消</view>
+        <view class="ios-btn ios-btn-primary flex-15" hover-class="tap-active" bindtap="onSubmitCreate">发布限时搭子</view>
+      </view>
+    </view>
+  </view>
+
+  <auth-sheet visible="{{authVisible}}" reason="{{authReason}}" bind:close="closeAuth" bind:success="onAuthSuccess" />
+  <profile-sheet visible="{{profileVisible}}" user="{{user}}" bind:close="closeProfile" bind:updated="onProfileUpdated" bind:logout="onLogout" />
+</view>

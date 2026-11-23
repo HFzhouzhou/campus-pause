@@ -1,0 +1,21 @@
+<view wx:if="{{!hidden}}" class="dock-wrap">
+  <view class="dock-capsule">
+    <view class="dock-specular"></view>
+    <view
+      wx:for="{{list}}"
+      wx:key="pagePath"
+      class="dock-item {{selected === index ? 'dock-item-active' : ''}}"
+      data-index="{{index}}"
+      data-path="{{item.pagePath}}"
+      bindtap="switchTab"
+    >
+      <view wx:if="{{selected === index}}" class="dock-lens"></view>
+      <image
+        class="dock-icon-img"
+        src="{{selected === index ? item.selectedIconPath : item.iconPath}}"
+        mode="aspectFit"
+      />
+      <text class="dock-label">{{item.text}}</text>
+    </view>
+  </view>
+</view>

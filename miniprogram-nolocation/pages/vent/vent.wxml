@@ -1,0 +1,171 @@
+<view class="ios-canvas vent-page" style="padding-top: {{menuTop}}px;">
+  <!-- 顶部与微信胶囊对齐的导航栏 -->
+  <view class="ios-nav-row" style="height: {{menuHeight}}px; padding-right: {{menuRightSpace}}px;">
+    <view wx:if="{{user}}" class="liquid-dock account-pill" hover-class="tap-active" bindtap="openProfile">
+      <image class="account-avatar" src="{{user.avatarUrl}}" mode="aspectFill" />
+      <text class="account-name">{{user.nickname}}</text>
+    </view>
+    <view wx:else class="liquid-dock account-pill-guest" hover-class="tap-active" bindtap="openAuthManual">登录</view>
+  </view>
+
+  <view class="page-head-block">
+    <text class="header-kicker">INSTANT VENT · 阅后即焚</text>
+    <text class="header-title">情绪粉碎机</text>
+    <text class="header-sub">把崩溃丢进黑洞，清空后绝不留任何记录</text>
+  </view>
+
+  <!-- 宣泄主卡片 -->
+  <view class="ios-card vent-card">
+    <view class="quick-tags">
+      <view
+        wx:for="{{quickTags}}"
+        wx:key="*this"
+        class="quick-tag"
+        hover-class="tap-active"
+        data-tag="{{item}}"
+        bindtap="onAddQuickTag"
+      >+ {{item}}</view>
+    </view>
+
+    <textarea
+      class="vent-textarea"
+      value="{{ventText}}"
+      maxlength="240"
+      placeholder="把委屈、焦虑或碎碎念敲出来… 点下方粉碎直接吸入黑洞，本地零留存。"
+      placeholder-style="color: #94A3B8;"
+      bindinput="onVentInput"
+    />
+
+    <!-- Apple 语音备忘录风格：10 条动态声波按住吼一嗓子 -->
+    <view
+      class="shout-btn {{shouting ? 'shout-btn-active' : ''}}"
+      bindtouchstart="startShout"
+      bindtouchend="endShout"
+      bindtouchcancel="endShout"
+    >
+      <view class="shout-fill" style="width: {{shoutPercent}}%;"></view>
+      <view class="shout-inner">
+        <view class="shout-left">
+          <view class="shout-mic">
+            <view class="mic-dot {{shouting ? 'mic-dot-on' : ''}}"></view>
+          </view>
+          <view>
+            <text class="shout-title">{{shouting ? '无声呐喊释放中…松手排空' : '按住「吼一嗓子」'}}</text>
+            <text class="shout-sub">{{shouting ? '模拟声压 ' + shoutDb + ' dB · 不录音' : '宿舍/图书馆也能用的静音释放声波'}}</text>
+          </view>
+        </view>
+        <view class="wave-bars">
+          <view
+            wx:for="{{waveBars}}"
+            wx:key="id"
+            class="wave-bar {{shouting ? 'wave-bar-live' : ''}}"
+            style="height: {{shouting ? item.h : 14}}rpx;"
+          ></view>
+        </view>
+      </view>
+    </view>
+
+    <view
+      class="ios-btn ios-btn-dark {{(!ventText || shredding) ? 'ios-btn-disabled' : ''}}"
+      hover-class="tap-active"
+      bindtap="onShred"
+    >
+      彻底粉碎 · 吸入黑洞
+    </view>
+  </view>
+
+  <!-- 隐形心理安全兜底：温和暖光卡片 -->
+  <view wx:if="{{showCareCard}}" class="care-card">
+    <view class="care-head">
+      <view>
+        <text class="care-title">刚刚那段情绪一定让你背负了很久吧</text>
+        <text class="care-sub">你不需要一个人硬扛，这里有一盏一直亮着的灯</text>
+      </view>
+      <view class="care-close" bindtap="dismissCare">✕</view>
+    </view>
+    <text class="care-body">文字已彻底粉碎且不会留下任何记录。若此刻觉得呼吸有点沉重，可随时联系完全匿名的温柔支持通道：</text>
+    <view class="care-green">
+      <view>
+        <text class="care-green-title">校园心理中心 · 24h 匿名绿色预约</text>
+        <text class="care-green-sub">仅用代号沟通 · 严格保密</text>
+      </view>
+      <view class="care-book-btn" hover-class="tap-active" bindtap="onBookCare">
+        {{careBooked ? '通道 #PAU-24H' : '匿名预约'}}
+      </view>
+    </view>
+    <view class="care-phones">
+      <view class="care-phone-item" hover-class="tap-active" data-tel="4001619995" bindtap="onCallHotline">
+        <text class="phone-name">希望 24 热线</text>
+        <text class="phone-num">400-161-9995</text>
+      </view>
+      <view class="care-phone-item" hover-class="tap-active" data-tel="12356" bindtap="onCallHotline">
+        <text class="phone-name">全国心理援助</text>
+        <text class="phone-num">12356</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 同校悬浮虹彩液态泡泡（按 tone 拥有薄荷/琥珀/薰衣草专属通透光晕） -->
+  <view class="bubble-section">
+    <view class="bubble-header">
+      <view>
+        <text class="bubble-sec-title">同校悬浮共鸣泡泡</text>
+        <text class="bubble-sec-sub">长按泡泡蓄满暖光送出抱抱 · 关闭评论区</text>
+      </view>
+      <view class="no-comment-pill">零评论内耗</view>
+    </view>
+
+    <view
+      wx:for="{{bubbles}}"
+      wx:key="id"
+      class="soap-bubble soap-tone-{{item.tone}} {{holdingBubbleId === item.id ? 'soap-bubble-charging' : ''}} {{burstBubbleId === item.id ? 'soap-bubble-burst' : ''}}"
+      data-id="{{item.id}}"
+      bindtouchstart="startBubbleHold"
+      bindtouchmove="moveBubbleHold"
+      bindtouchend="endBubbleHold"
+      bindtouchcancel="endBubbleHold"
+    >
+      <view class="soap-shine"></view>
+      <view class="soap-rim-dot"></view>
+      <view class="bubble-top">
+        <text class="bubble-tag">#{{item.tag}}</text>
+        <text class="bubble-time">五合匿名泡泡 · {{item.createdAt}}</text>
+      </view>
+      <text class="bubble-text">{{item.content}}</text>
+
+      <view class="charge-track">
+        <view
+          class="charge-fill"
+          style="width: {{holdingBubbleId === item.id ? holdProgress : 0}}%;"
+        ></view>
+      </view>
+
+      <view class="bubble-foot">
+        <view class="hug-pill {{item.huggedByMe || holdingBubbleId === item.id ? 'hug-pill-on' : ''}}">
+          <text>🫂 {{holdingBubbleId === item.id ? '蓄力 ' + holdProgress + '%' : item.huggedByMe ? '已送出抱抱' : '长按泡泡抱抱'}} {{item.hugs}}</text>
+        </view>
+        <view
+          class="emp-pill {{item.empathizedByMe ? 'emp-pill-on' : ''}}"
+          hover-class="tap-active"
+          data-id="{{item.id}}"
+          catchtap="onTapEmpathy"
+        >
+          <text>⚡ 同感 {{item.empathy}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="dock-spacer"></view>
+
+  <!-- 黑洞粉碎全屏动效 -->
+  <view wx:if="{{shredding}}" class="vortex-mask">
+    <view class="vortex-halo"></view>
+    <view class="vortex-ring"></view>
+    <view class="vortex-card">{{shredSnapshot}}</view>
+    <text class="vortex-tip">正在吸入黑洞彻底清空，不留任何记录…</text>
+  </view>
+
+  <auth-sheet visible="{{authVisible}}" reason="{{authReason}}" bind:close="closeAuth" bind:success="onAuthSuccess" />
+  <profile-sheet visible="{{profileVisible}}" user="{{user}}" bind:close="closeProfile" bind:updated="onProfileUpdated" bind:logout="onLogout" />
+</view>

@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "auth-sheet": "/components/auth-sheet/index",
+    "profile-sheet": "/components/profile-sheet/index"
+  }
+}
