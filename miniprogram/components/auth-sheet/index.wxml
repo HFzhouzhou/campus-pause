@@ -2,126 +2,211 @@
   <view class="sheet-panel" catchtap="noop">
     <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
 
-    <view class="sheet-header">
-      <view>
-        <view class="badge-pill">校园暂停键通行证</view>
-        <view class="sheet-title">登录 / 注册</view>
-        <view class="sheet-subtitle">{{reason ? '登录后即可' + reason : '未注册自动创建账号，逛页面无需强制登录'}}</view>
-      </view>
-      <view class="sheet-close" hover-class="tap-active" bindtap="onClose">✕</view>
-    </view>
-
-    <scroll-view scroll-y class="sheet-scroll">
-      <view class="sheet-inner">
-        <view class="mode-segment">
-          <view
-            class="mode-btn {{mode === 'wechat' ? 'mode-btn-active' : ''}}"
-            data-mode="wechat"
-            bindtap="switchMode"
-          >微信一键登录</view>
-          <view
-            class="mode-btn {{mode === 'email' ? 'mode-btn-active' : ''}}"
-            data-mode="email"
-            bindtap="switchMode"
-          >邮箱验证码</view>
+    <!-- Step 2：新用户微信一键登录后，自动引导 1 秒同步微信头像与昵称 -->
+    <block wx:if="{{step === 'wechat_profile'}}">
+      <view class="sheet-header">
+        <view class="header-text-wrap">
+          <view class="badge-pill badge-green">✓ 微信登录成功 · 最后一步</view>
+          <view class="sheet-title">同步你的微信头像与昵称</view>
+          <view class="sheet-subtitle">轻点下方头像与昵称框，微信会自动弹出你的资料</view>
         </view>
+        <view class="sheet-close" hover-class="tap-active" bindtap="onSkipProfile">✕</view>
+      </view>
 
-        <!-- 微信一键登录（原生头像昵称授权） -->
-        <view wx:if="{{mode === 'wechat'}}" class="auth-block">
-          <view class="wx-profile-row">
-            <button
-              class="wx-avatar-btn"
-              open-type="chooseAvatar"
-              bindchooseavatar="onChooseAvatar"
-            >
-              <image class="wx-avatar-img" src="{{wxAvatarUrl}}" mode="aspectFill" />
-              <view class="wx-avatar-tag">换头像</view>
-            </button>
-            <view class="wx-nick-wrap">
-              <text class="field-label">微信昵称（点击直接填入）</text>
+      <form class="sheet-form" bindsubmit="onCompleteWeChatProfile">
+        <scroll-view scroll-y class="sheet-scroll">
+          <view class="sheet-inner">
+            <view class="onboard-avatar-wrap">
+              <button
+                class="onboard-avatar-btn"
+                open-type="chooseAvatar"
+                bindchooseavatar="onChooseAvatar"
+              >
+                <image class="onboard-avatar-img" src="{{wxAvatarUrl}}" mode="aspectFill" />
+                <view class="onboard-avatar-mask">
+                  <text>{{uploadingAvatar ? '同步中…' : '点此用微信头像'}}</text>
+                </view>
+              </button>
+              <text class="onboard-hint">点击圆形头像 → 底部选择「使用微信头像」</text>
+            </view>
+
+            <view class="field-group">
+              <text class="field-label">微信昵称</text>
               <input
                 type="nickname"
-                class="ios-input"
+                name="nickname"
+                class="ios-input onboard-input"
                 value="{{wxNickName}}"
-                placeholder="点击填入微信昵称"
+                maxlength="16"
+                placeholder="轻点输入框 → 键盘上方选「使用微信昵称」"
                 placeholder-style="color: #94A3B8;"
                 bindinput="onWxNickInput"
                 bindblur="onWxNickInput"
+                bindchange="onWxNickInput"
               />
             </view>
-          </view>
 
-          <view wx:if="{{errorMsg}}" class="error-text">{{errorMsg}}</view>
-
-          <view
-            class="ios-btn ios-btn-green {{submitting ? 'ios-btn-disabled' : ''}}"
-            hover-class="tap-active"
-            bindtap="onWeChatLogin"
-          >
-            {{submitting ? '授权登录中…' : '微信一键授权登录'}}
-          </view>
-          <view class="auth-tip">仅用于保存你的校园治愈足迹与搭子频道，不打扰好友</view>
-        </view>
-
-        <!-- 邮箱 6 位验证码登录 -->
-        <view wx:if="{{mode === 'email'}}" class="auth-block">
-          <view class="field-group">
-            <text class="field-label">邮箱地址</text>
-            <input
-              type="text"
-              class="ios-input"
-              value="{{email}}"
-              placeholder="输入 QQ / 163 / 校园邮箱"
-              placeholder-style="color: #94A3B8;"
-              bindinput="onEmailInput"
-            />
-          </view>
-
-          <view class="field-group">
-            <text class="field-label">6 位邮箱验证码</text>
-            <view class="code-row">
-              <input
-                type="number"
-                maxlength="6"
-                class="ios-input code-input"
-                value="{{code}}"
-                placeholder="输入 6 位验证码"
-                placeholder-style="color: #94A3B8;"
-                bindinput="onCodeInput"
+            <view class="preset-mini-row">
+              <text class="preset-mini-label">或选校园头像：</text>
+              <image
+                wx:for="{{presetAvatars}}"
+                wx:key="*this"
+                src="{{item}}"
+                mode="aspectFill"
+                class="preset-mini {{wxAvatarUrl === item ? 'preset-mini-on' : ''}}"
+                data-url="{{item}}"
+                bindtap="onSelectPresetAvatar"
               />
-              <view
-                class="send-code-btn {{(sending || countdown > 0 || !email) ? 'ios-btn-disabled' : ''}}"
-                hover-class="tap-active"
-                bindtap="onSendCode"
+            </view>
+
+            <view wx:if="{{errorMsg}}" class="error-text">{{errorMsg}}</view>
+            <view class="skip-link" hover-class="tap-active" bindtap="onSkipProfile">
+              先用默认资料进入，稍后再改
+            </view>
+          </view>
+        </scroll-view>
+
+        <view class="sheet-footer">
+          <button
+            form-type="submit"
+            class="submit-reset-btn ios-btn ios-btn-primary"
+            disabled="{{submitting || uploadingAvatar}}"
+          >
+            {{submitting ? '保存中…' : uploadingAvatar ? '头像同步中…' : '同步微信资料并进入'}}
+          </button>
+        </view>
+      </form>
+    </block>
+
+    <!-- Step 1：主登录入口（微信一键登录 + 邮箱验证码切换） -->
+    <block wx:else>
+      <view class="sheet-header">
+        <view class="header-text-wrap">
+          <view class="badge-pill">校园暂停键通行证</view>
+          <view class="sheet-title">登录 / 注册</view>
+          <view class="sheet-subtitle">{{reason ? '登录后即可' + reason : '未注册自动创建账号，逛页面无需强制登录'}}</view>
+        </view>
+        <view class="sheet-close" hover-class="tap-active" bindtap="onClose">✕</view>
+      </view>
+
+      <scroll-view scroll-y class="sheet-scroll">
+        <view class="sheet-inner">
+          <view class="mode-segment">
+            <view
+              class="mode-btn {{mode === 'wechat' ? 'mode-btn-active' : ''}}"
+              data-mode="wechat"
+              bindtap="switchMode"
+            >微信一键登录</view>
+            <view
+              class="mode-btn {{mode === 'email' ? 'mode-btn-active' : ''}}"
+              data-mode="email"
+              bindtap="switchMode"
+            >邮箱验证码</view>
+          </view>
+
+          <!-- 微信一键登录（外层包 form 确保键盘一键填充的微信昵称 100% 捕获） -->
+          <form wx:if="{{mode === 'wechat'}}" bindsubmit="onWeChatOneTap">
+            <view class="auth-block">
+              <view class="wx-hero-card">
+                <button
+                  class="wx-avatar-btn"
+                  open-type="chooseAvatar"
+                  bindchooseavatar="onChooseAvatar"
+                >
+                  <image class="wx-avatar-img" src="{{wxAvatarUrl}}" mode="aspectFill" />
+                  <view class="wx-avatar-tag">{{uploadingAvatar ? '上传中' : '点选微信头像'}}</view>
+                </button>
+                <view class="wx-hero-info">
+                  <text class="wx-hero-title">广西外国语学院 · 五合校区</text>
+                  <input
+                    type="nickname"
+                    name="wxNickName"
+                    class="wx-inline-nick"
+                    value="{{wxNickName}}"
+                    maxlength="16"
+                    placeholder="可先点此获取微信昵称（或登录后同步）"
+                    placeholder-style="color: #94A3B8;"
+                    bindinput="onWxNickInput"
+                    bindblur="onWxNickInput"
+                    bindchange="onWxNickInput"
+                  />
+                </view>
+              </view>
+
+              <view wx:if="{{errorMsg}}" class="error-text">{{errorMsg}}</view>
+
+              <button
+                form-type="submit"
+                class="submit-reset-btn ios-btn ios-btn-green {{(submitting || uploadingAvatar) ? 'ios-btn-disabled' : ''}}"
+                disabled="{{submitting || uploadingAvatar}}"
               >
-                {{sending ? '发送中' : countdown > 0 ? countdown + 's' : '获取验证码'}}
+                {{submitting ? '正在连接微信…' : uploadingAvatar ? '头像上传中…' : '微信一键登录'}}
+              </button>
+              <view class="auth-tip">首次登录将自动引导 1 秒获取微信头像与昵称，老用户秒登</view>
+            </view>
+          </form>
+
+          <!-- 邮箱 6 位验证码登录 -->
+          <view wx:if="{{mode === 'email'}}" class="auth-block">
+            <view class="field-group">
+              <text class="field-label">邮箱地址</text>
+              <input
+                type="text"
+                class="ios-input"
+                value="{{email}}"
+                placeholder="输入 QQ / 163 / 校园邮箱"
+                placeholder-style="color: #94A3B8;"
+                bindinput="onEmailInput"
+              />
+            </view>
+
+            <view class="field-group">
+              <text class="field-label">6 位邮箱验证码</text>
+              <view class="code-row">
+                <input
+                  type="number"
+                  maxlength="6"
+                  class="ios-input code-input"
+                  value="{{code}}"
+                  placeholder="输入 6 位验证码"
+                  placeholder-style="color: #94A3B8;"
+                  bindinput="onCodeInput"
+                />
+                <view
+                  class="send-code-btn {{(sending || countdown > 0 || !email) ? 'ios-btn-disabled' : ''}}"
+                  hover-class="tap-active"
+                  bindtap="onSendCode"
+                >
+                  {{sending ? '发送中' : countdown > 0 ? countdown + 's' : '获取验证码'}}
+                </view>
               </view>
             </view>
-          </view>
 
-          <view class="field-group">
-            <text class="field-label">显示昵称（选填）</text>
-            <input
-              type="nickname"
-              class="ios-input"
-              value="{{nickname}}"
-              placeholder="留空自动生成，也可点此填入微信昵称"
-              placeholder-style="color: #94A3B8;"
-              bindinput="onNickInput"
-            />
-          </view>
+            <view class="field-group">
+              <text class="field-label">显示昵称（选填）</text>
+              <input
+                type="nickname"
+                class="ios-input"
+                value="{{nickname}}"
+                placeholder="留空自动生成，也可点此填入微信昵称"
+                placeholder-style="color: #94A3B8;"
+                bindinput="onNickInput"
+                bindblur="onNickInput"
+              />
+            </view>
 
-          <view wx:if="{{errorMsg}}" class="error-text">{{errorMsg}}</view>
+            <view wx:if="{{errorMsg}}" class="error-text">{{errorMsg}}</view>
 
-          <view
-            class="ios-btn ios-btn-primary {{(submitting || !email || code.length < 6) ? 'ios-btn-disabled' : ''}}"
-            hover-class="tap-active"
-            bindtap="onEmailLogin"
-          >
-            {{submitting ? '验证中…' : '验证并登录'}}
+            <view
+              class="ios-btn ios-btn-primary {{(submitting || !email || code.length < 6) ? 'ios-btn-disabled' : ''}}"
+              hover-class="tap-active"
+              bindtap="onEmailLogin"
+            >
+              {{submitting ? '验证中…' : '验证并登录'}}
+            </view>
           </view>
         </view>
-      </view>
-    </scroll-view>
+      </scroll-view>
+    </block>
   </view>
 </view>

@@ -16,7 +16,7 @@
     bindtap="onMapTap"
   />
 
-  <!-- 顶部 Apple Liquid Glass 悬浮栏（精准对齐微信胶囊高度，永不遮挡） -->
+  <!-- 顶部 Apple Maps 液态玻璃 HUD -->
   <view class="top-hud" style="padding-top: {{menuTop}}px;">
     <view class="top-brand-row" style="height: {{menuHeight}}px; padding-right: {{menuRightSpace}}px;">
       <view class="liquid-dock campus-badge" hover-class="tap-active" bindtap="onBackToCampus">
@@ -33,10 +33,10 @@
       </view>
     </view>
 
-    <!-- 液态玻璃搜索框（高德五合校区 POI 实搜） -->
+    <!-- 液态玻璃搜索框（使用 SF 风格 PNG 图标） -->
     <view class="search-wrap">
       <view class="liquid-dock search-bar">
-        <text class="search-icon">⌕</text>
+        <image class="search-icon-img" src="/assets/icons/search.png" mode="aspectFit" />
         <input
           class="search-input"
           value="{{searchQuery}}"
@@ -78,11 +78,11 @@
     </scroll-view>
   </view>
 
-  <!-- 右侧液态玻璃地图控件（锚定在底部卡片上方，绝不遮挡顶部搜索或底部卡片） -->
+  <!-- 右侧 Apple Maps 风格液态玻璃控件（高清 SF 图标） -->
   <view class="right-controls">
     <view class="liquid-dock ctrl-btn {{isSatellite ? 'ctrl-active' : ''}}" hover-class="tap-active" bindtap="toggleSatellite">
-      <text class="ctrl-txt-main">{{isSatellite ? '卫星' : '标准'}}</text>
-      <text class="ctrl-txt-sub">图层</text>
+      <image class="ctrl-icon-img" src="{{isSatellite ? '/assets/icons/layers-active.png' : '/assets/icons/layers.png'}}" mode="aspectFit" />
+      <text class="ctrl-txt-sub {{isSatellite ? 'text-blue' : ''}}">{{isSatellite ? '卫星' : '标准'}}</text>
     </view>
     <view class="liquid-dock ctrl-group">
       <view class="ctrl-mini" hover-class="tap-active" bindtap="zoomIn">+</view>
@@ -90,10 +90,10 @@
       <view class="ctrl-mini" hover-class="tap-active" bindtap="zoomOut">−</view>
     </view>
     <view class="liquid-dock ctrl-btn" hover-class="tap-active" bindtap="onLocateMe">
-      <text class="ctrl-txt-main text-blue">定位</text>
+      <image class="ctrl-icon-img" src="/assets/icons/locate.png" mode="aspectFit" />
     </view>
     <view class="liquid-dock ctrl-btn" hover-class="tap-active" bindtap="onBackToCampus">
-      <text class="ctrl-txt-main">校区</text>
+      <image class="ctrl-icon-img" src="/assets/icons/campus.png" mode="aspectFit" />
     </view>
   </view>
 
@@ -146,7 +146,7 @@
               <view class="spot-info">
                 <view class="spot-head">
                   <text class="spot-name">{{item.name}}</text>
-                  <text class="spot-rate">★ {{item.ratingText}}</text>
+                  <view class="spot-rate-pill">★ {{item.ratingText}}</view>
                 </view>
                 <view class="spot-meta-row">
                   <text class="spot-dist">{{item.distanceText}}</text>
@@ -162,12 +162,13 @@
             <view class="spot-foot">
               <view
                 class="like-pill {{item.likedByMe ? 'like-pill-active' : ''}}"
+                hover-class="tap-active"
                 data-id="{{item.id}}"
                 catchtap="onToggleLike"
               >
                 <text>{{item.likedByMe ? '♥' : '♡'}} {{item.likes}}</text>
               </view>
-              <view class="go-pill" data-id="{{item.id}}" catchtap="openSpotDetail">
+              <view class="go-pill" hover-class="tap-active" data-id="{{item.id}}" catchtap="openSpotDetail">
                 <text>去这里 · 详情 ›</text>
               </view>
             </view>

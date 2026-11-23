@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'cp_mp_spots_gxufl_v1';
+const STORAGE_KEY = 'cp_mp_spots_gxufl_v2';
 
 const SPOT_CATEGORIES = [
   { id: 'all', label: '全部', emoji: '✦', accent: '#007AFF' },
@@ -15,32 +15,13 @@ const QUIET_META = {
   crowded: { label: '稍微有点吵', color: '#BE123C', bg: '#FFF1F2', dot: '#FF3B30' },
 };
 
+// 全部采用 0ms 秒开的本地高颜值治愈氛围封面（国内任何校园网永不裂图、永不白屏）
 const PRESET_PHOTOS = [
-  {
-    id: 'sunset',
-    label: '橘子海落日',
-    url: 'https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?auto=format&fit=crop&w=900&q=80',
-  },
-  {
-    id: 'cat',
-    label: '晒太阳校猫',
-    url: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=900&q=80',
-  },
-  {
-    id: 'quiet',
-    label: '图书馆静区',
-    url: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=900&q=80',
-  },
-  {
-    id: 'lawn',
-    label: '微风绿草坪',
-    url: 'https://images.unsplash.com/photo-1501854155220-e28231c1f165?auto=format&fit=crop&w=900&q=80',
-  },
-  {
-    id: 'rooftop',
-    label: '观风晚霞台',
-    url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=900&q=80',
-  },
+  { id: 'sunset', label: '橘子海落日', url: '/assets/spots/sunset.png' },
+  { id: 'cats', label: '晒太阳校猫', url: '/assets/spots/cats.png' },
+  { id: 'library', label: '图书馆静区', url: '/assets/spots/library.png' },
+  { id: 'lawn', label: '微风绿草坪', url: '/assets/spots/lawn.png' },
+  { id: 'rooftop', label: '观风晚霞台', url: '/assets/spots/rooftop.png' },
 ];
 
 const INITIAL_SPOTS = [
@@ -51,7 +32,7 @@ const INITIAL_SPOTS = [
     category: 'sunset',
     longitude: 108.51512,
     latitude: 22.80088,
-    coverUrl: PRESET_PHOTOS[0].url,
+    coverUrl: '/assets/spots/sunset.png',
     quietStatus: 'very_quiet',
     quietUpdatedAt: '6分钟前更新',
     rating: 4.9,
@@ -76,7 +57,7 @@ const INITIAL_SPOTS = [
     category: 'cats',
     longitude: 108.51655,
     latitude: 22.80122,
-    coverUrl: PRESET_PHOTOS[1].url,
+    coverUrl: '/assets/spots/cats.png',
     quietStatus: 'moderate',
     quietUpdatedAt: '12分钟前更新',
     rating: 4.9,
@@ -101,7 +82,7 @@ const INITIAL_SPOTS = [
     category: 'quiet',
     longitude: 108.51624,
     latitude: 22.80205,
-    coverUrl: PRESET_PHOTOS[2].url,
+    coverUrl: '/assets/spots/library.png',
     quietStatus: 'very_quiet',
     quietUpdatedAt: '刚刚更新',
     rating: 5.0,
@@ -126,7 +107,7 @@ const INITIAL_SPOTS = [
     category: 'lawn',
     longitude: 108.51468,
     latitude: 22.79972,
-    coverUrl: PRESET_PHOTOS[3].url,
+    coverUrl: '/assets/spots/lawn.png',
     quietStatus: 'moderate',
     quietUpdatedAt: '19分钟前更新',
     rating: 4.8,
@@ -151,7 +132,7 @@ const INITIAL_SPOTS = [
     category: 'rooftop',
     longitude: 108.51718,
     latitude: 22.80015,
-    coverUrl: PRESET_PHOTOS[4].url,
+    coverUrl: '/assets/spots/rooftop.png',
     quietStatus: 'very_quiet',
     quietUpdatedAt: '10分钟前更新',
     rating: 4.9,
@@ -176,7 +157,7 @@ const INITIAL_SPOTS = [
     category: 'sunset',
     longitude: 108.51755,
     latitude: 22.80215,
-    coverUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80',
+    coverUrl: '/assets/spots/track.png',
     quietStatus: 'moderate',
     quietUpdatedAt: '24分钟前更新',
     rating: 4.7,
@@ -193,7 +174,7 @@ const INITIAL_SPOTS = [
     category: 'quiet',
     longitude: 108.51586,
     latitude: 22.79758,
-    coverUrl: 'https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?auto=format&fit=crop&w=900&q=80',
+    coverUrl: '/assets/spots/gate.png',
     quietStatus: 'very_quiet',
     quietUpdatedAt: '31分钟前更新',
     rating: 4.8,

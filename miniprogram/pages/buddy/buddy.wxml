@@ -39,25 +39,36 @@
       class="ios-card buddy-card {{item.joinedByMe ? 'buddy-card-joined' : ''}}"
     >
       <view class="card-top">
-        <view class="countdown-pill">{{item.isExpired ? '已解散' : '剩 ' + item.remainingText}}</view>
+        <view class="countdown-pill {{item.isExpired ? 'countdown-expired' : ''}}">
+          <view wx:if="{{!item.isExpired}}" class="live-dot"></view>
+          <text>{{item.isExpired ? '已自动解散' : '剩 ' + item.remainingText}}</text>
+        </view>
         <view class="card-badges">
           <text wx:if="{{item.isSilent}}" class="silent-pill">可静音</text>
           <text class="count-pill">{{item.joinedCount}}/{{item.maxPeople}} 人</text>
         </view>
       </view>
 
-      <text class="buddy-title">{{item.title}}</text>
+      <view class="buddy-title-row">
+        <text class="buddy-emoji">{{item.catEmoji}}</text>
+        <text class="buddy-title">{{item.title}}</text>
+      </view>
       <text class="buddy-note">{{item.vibeNote}}</text>
 
-      <view class="buddy-loc">
-        <text class="loc-main">{{item.location}}</text>
-        <text class="loc-host">· {{item.hostAlias}}</text>
+      <view class="buddy-meta-strip">
+        <view class="host-monogram">{{item.hostInitial}}</view>
+        <view class="buddy-loc">
+          <text class="loc-main">{{item.location}}</text>
+          <text class="loc-host">发起人 · {{item.hostAlias}}</text>
+        </view>
       </view>
 
-      <view class="boundary-pill">{{item.boundaryTag}}</view>
+      <view class="boundary-pill">🛡️ {{item.boundaryTag}}</view>
 
       <view class="card-foot">
-        <text class="cipher-hint">{{item.joinedByMe ? '暗号：' + item.cipher : '举手后解锁暗号'}}</text>
+        <text class="cipher-hint {{item.joinedByMe ? 'cipher-hint-unlocked' : ''}}">
+          {{item.joinedByMe ? '🔑 暗号：' + item.cipher : '🔒 举手后解锁接头暗号'}}
+        </text>
         <view
           class="join-btn {{item.joinedByMe ? 'join-btn-joined' : item.isFull || item.isExpired ? 'join-btn-disabled' : ''}}"
           hover-class="tap-active"
@@ -87,14 +98,20 @@
       <scroll-view scroll-y class="sheet-scroll">
         <view class="sheet-inner">
           <view class="wallet-card">
+            <view class="wallet-shine"></view>
             <view class="wallet-top">
-              <text class="wallet-k">接头暗号 / 辨认特征</text>
+              <text class="wallet-k">CAMPUS PASS · 接头暗号</text>
               <text class="wallet-time">剩 {{cipherRemaining}}</text>
             </view>
             <text class="wallet-cipher">“{{activeCipherBuddy.cipher}}”</text>
+            <view class="wallet-tear-wrap">
+              <view class="wallet-notch wallet-notch-l"></view>
+              <view class="wallet-tear-line"></view>
+              <view class="wallet-notch wallet-notch-r"></view>
+            </view>
             <view class="wallet-foot">
-              <text>{{activeCipherBuddy.location}}</text>
-              <text>{{activeCipherBuddy.joinedCount}}/{{activeCipherBuddy.maxPeople}} 人</text>
+              <text>📍 {{activeCipherBuddy.location}}</text>
+              <text>{{activeCipherBuddy.joinedCount}}/{{activeCipherBuddy.maxPeople}} 人已就位</text>
             </view>
           </view>
 

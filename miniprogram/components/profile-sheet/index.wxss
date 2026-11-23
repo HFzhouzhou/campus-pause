@@ -7,21 +7,21 @@
 
 .avatar-picker-btn {
   position: relative;
-  width: 148rpx !important;
-  height: 148rpx !important;
+  width: 152rpx !important;
+  height: 152rpx !important;
   min-height: 0 !important;
   padding: 0 !important;
   margin: 0 !important;
   border-radius: 999rpx !important;
   overflow: hidden;
   background: #f2f2f7 !important;
-  box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.12);
+  box-shadow: 0 10rpx 28rpx rgba(15, 23, 42, 0.14);
   line-height: 1 !important;
 }
 
 .avatar-large {
-  width: 148rpx;
-  height: 148rpx;
+  width: 152rpx;
+  height: 152rpx;
   border-radius: 999rpx;
   display: block;
 }
@@ -31,9 +31,10 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(0, 122, 255, 0.8);
   color: #ffffff;
   font-size: 18rpx;
+  font-weight: 600;
   line-height: 36rpx;
   text-align: center;
 }
@@ -106,6 +107,10 @@
   flex-shrink: 0;
 }
 
-.save-btn {
-  flex: 1;
+.save-reset-btn {
+  flex: 1 !important;
+  width: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  line-height: 88rpx !important;
 }

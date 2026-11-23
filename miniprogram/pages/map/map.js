@@ -318,11 +318,33 @@ Page({
   },
 
   zoomIn() {
-    this.setData({ mapScale: Math.min(20, this.data.mapScale + 1) });
+    if (this.mapCtx && this.mapCtx.getScale) {
+      this.mapCtx.getScale({
+        success: (res) => {
+          this.setData({ mapScale: Math.min(20, Math.round(res.scale || this.data.mapScale) + 1) });
+        },
+        fail: () => {
+          this.setData({ mapScale: Math.min(20, this.data.mapScale + 1) });
+        },
+      });
+    } else {
+      this.setData({ mapScale: Math.min(20, this.data.mapScale + 1) });
+    }
   },
 
   zoomOut() {
-    this.setData({ mapScale: Math.max(12, this.data.mapScale - 1) });
+    if (this.mapCtx && this.mapCtx.getScale) {
+      this.mapCtx.getScale({
+        success: (res) => {
+          this.setData({ mapScale: Math.max(12, Math.round(res.scale || this.data.mapScale) - 1) });
+        },
+        fail: () => {
+          this.setData({ mapScale: Math.max(12, this.data.mapScale - 1) });
+        },
+      });
+    } else {
+      this.setData({ mapScale: Math.max(12, this.data.mapScale - 1) });
+    }
   },
 
   onLocateMe() {
@@ -431,7 +453,13 @@ Page({
   },
 
   onMapTap(e) {
-    if (!this.data.isPickMode || !e.detail) return;
+    if (!this.data.isPickMode) {
+      if (this.data.poiResults.length > 0) {
+        this.setData({ poiResults: [] });
+      }
+      return;
+    }
+    if (!e.detail) return;
     const { longitude, latitude } = e.detail;
     if (longitude && latitude) {
       this.setData({ mapLng: longitude, mapLat: latitude });
@@ -478,7 +506,22 @@ Page({
       sizeType: ['compressed'],
       success: (res) => {
         const tempPath = res.tempFiles && res.tempFiles[0] && res.tempFiles[0].tempFilePath;
-        if (tempPath) this.setData({ ugcCoverUrl: tempPath });
+        if (!tempPath) return;
+        this.setData({ ugcCoverUrl: tempPath });
+        // 持久化到本地用户目录，避免重启小程序后临时图失效白屏
+        try {
+          const fs = wx.getFileSystemManager();
+          fs.saveFile({
+            tempFilePath: tempPath,
+            success: (saved) => {
+              if (saved && saved.savedFilePath) {
+                this.setData({ ugcCoverUrl: saved.savedFilePath });
+              }
+            },
+          });
+        } catch (e) {
+          // 降级保留临时路径
+        }
       },
     });
   },

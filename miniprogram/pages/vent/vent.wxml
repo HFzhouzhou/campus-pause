@@ -11,7 +11,7 @@
   <view class="page-head-block">
     <text class="header-kicker">INSTANT VENT · 阅后即焚</text>
     <text class="header-title">情绪粉碎机</text>
-    <text class="header-sub">写下崩溃丢进黑洞，彻底清空绝不留痕</text>
+    <text class="header-sub">把崩溃丢进黑洞，清空后绝不留任何记录</text>
   </view>
 
   <!-- 宣泄主卡片 -->
@@ -31,12 +31,12 @@
       class="vent-textarea"
       value="{{ventText}}"
       maxlength="240"
-      placeholder="把压抑和委屈敲出来吧… 点击粉碎后直接吸入黑洞，本地零留存。"
+      placeholder="把委屈、焦虑或碎碎念敲出来… 点下方粉碎直接吸入黑洞，本地零留存。"
       placeholder-style="color: #94A3B8;"
       bindinput="onVentInput"
     />
 
-    <!-- 长按静音声波吼一嗓子 -->
+    <!-- Apple 语音备忘录风格：10 条动态声波按住吼一嗓子 -->
     <view
       class="shout-btn {{shouting ? 'shout-btn-active' : ''}}"
       bindtouchstart="startShout"
@@ -51,10 +51,17 @@
           </view>
           <view>
             <text class="shout-title">{{shouting ? '无声呐喊释放中…松手排空' : '按住「吼一嗓子」'}}</text>
-            <text class="shout-sub">{{shouting ? '模拟声压 ' + shoutDb + ' dB · 不录音' : '图书馆/宿舍也能用的静音释放按钮'}}</text>
+            <text class="shout-sub">{{shouting ? '模拟声压 ' + shoutDb + ' dB · 不录音' : '宿舍/图书馆也能用的静音释放声波'}}</text>
           </view>
         </view>
-        <text class="shout-wave">{{shouting ? '▁▄█▆█▃' : '▁▂▃▂▁'}}</text>
+        <view class="wave-bars">
+          <view
+            wx:for="{{waveBars}}"
+            wx:key="id"
+            class="wave-bar {{shouting ? 'wave-bar-live' : ''}}"
+            style="height: {{shouting ? item.h : 14}}rpx;"
+          ></view>
+        </view>
       </view>
     </view>
 
@@ -98,7 +105,7 @@
     </view>
   </view>
 
-  <!-- 同校悬浮虹彩液态泡泡 -->
+  <!-- 同校悬浮虹彩液态泡泡（按 tone 拥有薄荷/琥珀/薰衣草专属通透光晕） -->
   <view class="bubble-section">
     <view class="bubble-header">
       <view>
@@ -111,7 +118,7 @@
     <view
       wx:for="{{bubbles}}"
       wx:key="id"
-      class="soap-bubble {{holdingBubbleId === item.id ? 'soap-bubble-charging' : ''}} {{burstBubbleId === item.id ? 'soap-bubble-burst' : ''}}"
+      class="soap-bubble soap-tone-{{item.tone}} {{holdingBubbleId === item.id ? 'soap-bubble-charging' : ''}} {{burstBubbleId === item.id ? 'soap-bubble-burst' : ''}}"
       data-id="{{item.id}}"
       bindtouchstart="startBubbleHold"
       bindtouchmove="moveBubbleHold"
@@ -119,6 +126,7 @@
       bindtouchcancel="endBubbleHold"
     >
       <view class="soap-shine"></view>
+      <view class="soap-rim-dot"></view>
       <view class="bubble-top">
         <text class="bubble-tag">#{{item.tag}}</text>
         <text class="bubble-time">五合匿名泡泡 · {{item.createdAt}}</text>
@@ -150,8 +158,9 @@
 
   <view class="dock-spacer"></view>
 
-  <!-- 黑洞粉碎全屏遮罩 -->
+  <!-- 黑洞粉碎全屏动效 -->
   <view wx:if="{{shredding}}" class="vortex-mask">
+    <view class="vortex-halo"></view>
     <view class="vortex-ring"></view>
     <view class="vortex-card">{{shredSnapshot}}</view>
     <text class="vortex-tip">正在吸入黑洞彻底清空，不留任何记录…</text>

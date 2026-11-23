@@ -1,19 +1,42 @@
 const { requestApi } = require('./api');
 
-const USER_KEY = 'cp_mp_user_v1';
-const TOKEN_KEY = 'cp_mp_token_v1';
+const USER_KEY = 'cp_mp_user_v2';
+const TOKEN_KEY = 'cp_mp_token_v2';
 
+// 5 款本地高清 PNG 浅色柔和头像（零外链失效风险，秒加载）
 const PRESET_AVATARS = [
-  'https://api.dicebear.com/9.x/notionists-neutral/svg?seed=Luna&backgroundColor=e0f2fe',
-  'https://api.dicebear.com/9.x/notionists-neutral/svg?seed=Milo&backgroundColor=dcfce7',
-  'https://api.dicebear.com/9.x/notionists-neutral/svg?seed=Sora&backgroundColor=f3e8ff',
-  'https://api.dicebear.com/9.x/notionists-neutral/svg?seed=Yuki&backgroundColor=fef3c7',
-  'https://api.dicebear.com/9.x/notionists-neutral/svg?seed=Leo&backgroundColor=ffe4e6',
+  '/assets/avatars/avatar-1.png',
+  '/assets/avatars/avatar-2.png',
+  '/assets/avatars/avatar-3.png',
+  '/assets/avatars/avatar-4.png',
+  '/assets/avatars/avatar-5.png',
 ];
+
+function sanitizeAvatar(url, seedStr = '') {
+  if (!url) return PRESET_AVATARS[0];
+  // 替换早期无法在小程序可靠加载的外部 SVG 头像链接，按 uid 稳定分配 5 款本地浅色头像
+  if (url.includes('dicebear.com') || url.endsWith('.svg')) {
+    const str = String(seedStr || url);
+    let hash = 0;
+    for (let i = 0; i < str.length; i += 1) {
+      hash = (hash + str.charCodeAt(i)) % PRESET_AVATARS.length;
+    }
+    return PRESET_AVATARS[hash];
+  }
+  return url;
+}
+
+function normalizeUser(user) {
+  if (!user) return null;
+  return {
+    ...user,
+    avatarUrl: sanitizeAvatar(user.avatarUrl, user.uid || user.email || user.nickname),
+  };
+}
 
 function getCurrentUser() {
   try {
-    return wx.getStorageSync(USER_KEY) || null;
+    return normalizeUser(wx.getStorageSync(USER_KEY) || null);
   } catch (e) {
     return null;
   }
@@ -28,14 +51,16 @@ function getToken() {
 }
 
 function saveSession(user, token) {
-  if (user) {
-    wx.setStorageSync(USER_KEY, user);
+  const clean = normalizeUser(user);
+  if (clean) {
+    wx.setStorageSync(USER_KEY, clean);
     const app = getApp();
-    if (app && app.globalData) app.globalData.user = user;
+    if (app && app.globalData) app.globalData.user = clean;
   }
   if (token) {
     wx.setStorageSync(TOKEN_KEY, token);
   }
+  return clean;
 }
 
 function logout() {
@@ -45,25 +70,67 @@ function logout() {
   if (app && app.globalData) app.globalData.user = null;
 }
 
-/** 1. 发送真实 163 邮箱 6 位验证码（连接线上服务器） */
+/**
+ * 将微信 chooseAvatar 返回的临时本地头像上传到服务器持久化，换取永久 HTTPS 链接
+ */
+function uploadLocalAvatar(tempFilePath) {
+  return new Promise((resolve) => {
+    if (
+      !tempFilePath ||
+      tempFilePath.startsWith('/assets/') ||
+      tempFilePath.startsWith('https://')
+    ) {
+      resolve(tempFilePath || PRESET_AVATARS[0]);
+      return;
+    }
+    try {
+      const fs = wx.getFileSystemManager();
+      fs.readFile({
+        filePath: tempFilePath,
+        encoding: 'base64',
+        async success(res) {
+          try {
+            const uploaded = await requestApi(
+              '/auth/upload-avatar',
+              'POST',
+              { base64: res.data },
+              getToken()
+            );
+            resolve((uploaded && uploaded.avatarUrl) || tempFilePath);
+          } catch (e) {
+            resolve(tempFilePath);
+          }
+        },
+        fail() {
+          resolve(tempFilePath);
+        },
+      });
+    } catch (e) {
+      resolve(tempFilePath);
+    }
+  });
+}
+
+/** 1. 发送真实 163 邮箱 6 位验证码 */
 function sendEmailCode(email) {
   return requestApi('/auth/send-code', 'POST', { email });
 }
 
-/** 2. 校验邮箱验证码并完成注册/登录 */
+/** 2. 校验邮箱验证码并登录/注册 */
 async function verifyEmailAndLogin(email, code, nickname = '') {
   const res = await requestApi('/auth/verify-email', 'POST', {
     email,
     code,
     nickname,
   });
-  saveSession(res.user, res.token);
-  return res.user;
+  return saveSession(res.user, res.token);
 }
 
 /**
  * 3. 微信小程序一键登录 (wx.login -> POST /auth/wechat-miniprogram)
- * 传入用户通过 <button open-type="chooseAvatar"> 和 <input type="nickname"> 选择的头像昵称
+ * 返回 { user, isNewUser, needsProfile }
+ * - 老用户：直接带回已保存的真实微信头像与昵称完成登录
+ * - 新用户：引导至同弹窗 Step 2（1 键点微信头像 + 1 键填微信昵称，自动持久化上传服务器）
  */
 function loginWithWeChat({ nickName = '', avatarUrl = '' } = {}) {
   return new Promise((resolve, reject) => {
@@ -74,13 +141,21 @@ function loginWithWeChat({ nickName = '', avatarUrl = '' } = {}) {
           return;
         }
         try {
+          let finalAvatar = avatarUrl;
+          if (finalAvatar && !finalAvatar.startsWith('/assets/') && !finalAvatar.startsWith('https://')) {
+            finalAvatar = await uploadLocalAvatar(finalAvatar);
+          }
           const res = await requestApi('/auth/wechat-miniprogram', 'POST', {
             wxCode: loginRes.code,
             nickName,
-            avatarUrl,
+            avatarUrl: finalAvatar,
           });
-          saveSession(res.user, res.token);
-          resolve(res.user);
+          const saved = saveSession(res.user, res.token);
+          resolve({
+            user: saved,
+            isNewUser: Boolean(res.isNewUser),
+            needsProfile: Boolean(res.needsProfile),
+          });
         } catch (err) {
           reject(err);
         }
@@ -92,17 +167,29 @@ function loginWithWeChat({ nickName = '', avatarUrl = '' } = {}) {
   });
 }
 
-/** 4. 更新个人昵称与头像（支持微信头像/昵称直接同步到线上 SQLite 数据库） */
+/** 4. 更新个人昵称与头像（若为微信临时头像则自动上传服务器持久化） */
 async function updateProfile({ nickname, avatarUrl, schoolName }) {
   const current = getCurrentUser();
   if (!current) return null;
-  const updated = {
-    ...current,
-    nickname: (nickname || current.nickname || '').trim(),
-    avatarUrl: avatarUrl || current.avatarUrl,
-    schoolName: schoolName || current.schoolName,
-  };
-  saveSession(updated, '');
+
+  let finalAvatar = avatarUrl || current.avatarUrl;
+  if (
+    finalAvatar &&
+    !finalAvatar.startsWith('/assets/') &&
+    !finalAvatar.startsWith('https://')
+  ) {
+    finalAvatar = await uploadLocalAvatar(finalAvatar);
+  }
+
+  const updated = saveSession(
+    {
+      ...current,
+      nickname: (nickname || current.nickname || '').trim(),
+      avatarUrl: finalAvatar,
+      schoolName: schoolName || current.schoolName,
+    },
+    ''
+  );
 
   const token = getToken();
   if (token) {
@@ -118,11 +205,10 @@ async function updateProfile({ nickname, avatarUrl, schoolName }) {
         token
       );
       if (res && res.user) {
-        saveSession(res.user, '');
-        return res.user;
+        return saveSession(res.user, '');
       }
     } catch (e) {
-      // 本地保留最新资料
+      // 保留本地更新
     }
   }
   return updated;
@@ -134,6 +220,7 @@ module.exports = {
   getToken,
   saveSession,
   logout,
+  uploadLocalAvatar,
   sendEmailCode,
   verifyEmailAndLogin,
   loginWithWeChat,

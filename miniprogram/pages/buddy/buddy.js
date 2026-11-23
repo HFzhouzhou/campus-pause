@@ -143,16 +143,23 @@ Page({
     const raw = buddyStore.getAll();
     const cat = this.data.activeCategory;
 
-    const decorate = (b) => ({
-      ...b,
-      remainingText: formatCountdown(b.expiresAt, now),
-      isExpired: b.expiresAt <= now,
-      isFull: b.joinedCount >= b.maxPeople && !b.joinedByMe,
-      quickMessages: (b.quickMessages || []).map((m) => ({
-        ...m,
-        isMe: (m.sender || '').startsWith('我'),
-      })),
-    });
+    const decorate = (b) => {
+      const catMeta =
+        buddyStore.BUDDY_CATEGORIES.find((c) => c.id === b.category) ||
+        buddyStore.BUDDY_CATEGORIES[0];
+      return {
+        ...b,
+        catEmoji: catMeta.emoji || '✨',
+        hostInitial: (b.hostAlias || '同').slice(0, 1),
+        remainingText: formatCountdown(b.expiresAt, now),
+        isExpired: b.expiresAt <= now,
+        isFull: b.joinedCount >= b.maxPeople && !b.joinedByMe,
+        quickMessages: (b.quickMessages || []).map((m) => ({
+          ...m,
+          isMe: (m.sender || '').startsWith('我'),
+        })),
+      };
+    };
 
     const filtered = raw
       .filter((b) => cat === 'all' || b.category === cat)

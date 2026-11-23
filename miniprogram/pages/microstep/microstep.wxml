@@ -50,14 +50,22 @@
 
   <!-- 当前拆解结果 -->
   <view wx:if="{{activePlan}}" class="plan-wrap">
-    <view class="ios-card empathy-card">
+    <view class="ios-card empathy-card {{progressPercent === 100 ? 'empathy-card-done' : ''}}">
       <view class="empathy-top">
-        <text class="empathy-goal">{{activePlan.prompt}}</text>
-        <text class="empathy-progress">{{completedCount}} / {{activePlan.steps.length}} 已完成</text>
+        <view class="empathy-goal-wrap">
+          <view class="empathy-dot {{progressPercent === 100 ? 'empathy-dot-done' : ''}}"></view>
+          <text class="empathy-goal">{{activePlan.prompt}}</text>
+        </view>
+        <text class="empathy-progress {{progressPercent === 100 ? 'empathy-progress-done' : ''}}">
+          {{progressPercent === 100 ? '全部达成 🎉' : completedCount + ' / ' + activePlan.steps.length + ' 已完成'}}
+        </text>
       </view>
       <text class="empathy-note">“{{activePlan.empathyNote}}”</text>
-      <view class="prog-track">
-        <view class="prog-fill" style="width: {{progressPercent}}%;"></view>
+      <view class="prog-row">
+        <view class="prog-track">
+          <view class="prog-fill" style="width: {{progressPercent}}%;"></view>
+        </view>
+        <text class="prog-pct">{{progressPercent}}%</text>
       </view>
     </view>
 
@@ -67,19 +75,27 @@
       class="ios-card step-card {{item.completed ? 'step-done' : ''}}"
     >
       <view class="step-row">
-        <view class="step-check {{item.completed ? 'step-check-on' : ''}}" data-id="{{item.id}}" bindtap="onToggleStep">
+        <view
+          class="step-check {{item.completed ? 'step-check-on' : ''}}"
+          hover-class="tap-active"
+          data-id="{{item.id}}"
+          bindtap="onToggleStep"
+        >
           <text>{{item.completed ? '✓' : ''}}</text>
         </view>
         <view class="step-body">
           <view class="step-head">
-            <text class="step-title {{item.completed ? 'step-title-done' : ''}}">0{{index + 1}} · {{item.title}}</text>
-            <text class="step-min">{{item.durationMinutes}}m</text>
+            <view class="step-title-group">
+              <text class="step-num step-num-{{index % 3}}">0{{index + 1}}</text>
+              <text class="step-title {{item.completed ? 'step-title-done' : ''}}">{{item.title}}</text>
+            </view>
+            <view class="step-min-pill">{{item.durationMinutes}} min</view>
           </view>
           <text class="step-detail">{{item.detail}}</text>
 
           <view class="step-actions">
             <view class="edit-link" hover-class="tap-active" data-id="{{item.id}}" bindtap="openEditStep">微调内容</view>
-            <view class="focus-btn" hover-class="tap-active" data-id="{{item.id}}" bindtap="openTimer">
+            <view class="focus-btn {{item.completed ? 'focus-btn-done' : ''}}" hover-class="tap-active" data-id="{{item.id}}" bindtap="openTimer">
               ▶ {{item.completed ? '再专注 10 分钟' : '开启 10 分钟专注'}}
             </view>
           </view>
@@ -119,16 +135,18 @@
       <view class="timer-body">
         <text class="timer-detail">{{timerStep.detail}}</text>
 
-        <view class="timer-circle {{timerDone ? 'timer-circle-done' : ''}}">
-          <block wx:if="{{timerDone}}">
-            <text class="done-icon">🎉</text>
-            <text class="done-txt">微行动完成！</text>
-            <text class="done-sub">你已战胜启动阻力</text>
-          </block>
-          <block wx:else>
-            <text class="timer-clock">{{timerText}}</text>
-            <text class="timer-state">{{timerRunning ? '只管推进这一小步' : '已暂停呼吸一下'}}</text>
-          </block>
+        <view class="timer-halo {{timerRunning && !timerDone ? 'timer-halo-pulse' : ''}} {{timerDone ? 'timer-halo-done' : ''}}">
+          <view class="timer-circle {{timerDone ? 'timer-circle-done' : ''}}">
+            <block wx:if="{{timerDone}}">
+              <text class="done-icon">🎉</text>
+              <text class="done-txt">微行动完成！</text>
+              <text class="done-sub">你已战胜启动阻力</text>
+            </block>
+            <block wx:else>
+              <text class="timer-clock">{{timerText}}</text>
+              <text class="timer-state">{{timerRunning ? '只管推进这一小步' : '已暂停呼吸一下'}}</text>
+            </block>
+          </view>
         </view>
 
         <view wx:if="{{!timerDone}}" class="demo-speed" bindtap="onQuickDemo5s">

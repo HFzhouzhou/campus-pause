@@ -43,19 +43,22 @@
   width: 14rpx;
   height: 14rpx;
   border-radius: 999rpx;
+  animation: pulseLive 2.4s ease-in-out infinite;
 }
 
 .dot-green {
   background: #34c759;
+  box-shadow: 0 0 10rpx rgba(52, 199, 89, 0.65);
 }
 
 .dot-blue {
   background: #007aff;
+  box-shadow: 0 0 10rpx rgba(0, 122, 255, 0.55);
 }
 
 .campus-badge-text {
   font-size: 23rpx;
-  font-weight: 600;
+  font-weight: 700;
   color: #1d1d1f;
 }
 
@@ -66,18 +69,19 @@
 }
 
 .search-bar {
-  height: 80rpx;
+  height: 82rpx;
   border-radius: 999rpx;
-  padding: 0 28rpx;
+  padding: 0 26rpx;
   display: flex;
   align-items: center;
   gap: 14rpx;
 }
 
-.search-icon {
-  font-size: 32rpx;
-  color: #64748b;
-  line-height: 1;
+.search-icon-img {
+  width: 30rpx;
+  height: 30rpx;
+  flex-shrink: 0;
+  opacity: 0.7;
 }
 
 .search-input {
@@ -117,8 +121,8 @@
 }
 
 .poi-dot {
-  width: 16rpx;
-  height: 16rpx;
+  width: 14rpx;
+  height: 14rpx;
   border-radius: 999rpx;
   background: #007aff;
   flex-shrink: 0;
@@ -164,16 +168,15 @@
 }
 
 .cat-pill-active {
-  background: #1d1d1f;
+  background: linear-gradient(180deg, #1687ff 0%, #007aff 100%);
   color: #ffffff;
-  box-shadow: 0 8rpx 18rpx rgba(15, 23, 42, 0.22);
+  box-shadow: 0 8rpx 20rpx rgba(0, 122, 255, 0.28);
 }
 
-/* 右侧控件固定在底部卡片流上方，永不遮挡 */
 .right-controls {
   position: fixed;
   right: 24rpx;
-  bottom: calc(564rpx + env(safe-area-inset-bottom));
+  bottom: calc(572rpx + env(safe-area-inset-bottom));
   z-index: 35;
   display: flex;
   flex-direction: column;
@@ -182,8 +185,8 @@
 
 .ctrl-btn {
   width: 80rpx;
-  height: 76rpx;
-  border-radius: 24rpx;
+  height: 78rpx;
+  border-radius: 26rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -191,30 +194,28 @@
 }
 
 .ctrl-active {
-  border-color: rgba(0, 122, 255, 0.45);
+  border-color: rgba(0, 122, 255, 0.42);
 }
 
-.ctrl-txt-main {
-  font-size: 22rpx;
-  font-weight: 700;
-  color: #1d1d1f;
-  line-height: 1.1;
-}
-
-.ctrl-active .ctrl-txt-main,
-.text-blue {
-  color: #007aff;
+.ctrl-icon-img {
+  width: 34rpx;
+  height: 34rpx;
 }
 
 .ctrl-txt-sub {
   font-size: 17rpx;
-  color: #64748b;
-  margin-top: 3rpx;
+  font-weight: 600;
+  color: #475569;
+  margin-top: 4rpx;
+}
+
+.text-blue {
+  color: #007aff;
 }
 
 .ctrl-group {
   width: 80rpx;
-  border-radius: 24rpx;
+  border-radius: 26rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -263,11 +264,11 @@
 }
 
 .crosshair-ring {
-  width: 52rpx;
-  height: 52rpx;
+  width: 54rpx;
+  height: 54rpx;
   border-radius: 999rpx;
   border: 4rpx solid #007aff;
-  background: rgba(0, 122, 255, 0.14);
+  background: rgba(0, 122, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -298,14 +299,14 @@
   display: inline-flex;
   align-items: center;
   gap: 8rpx;
-  height: 74rpx;
-  padding: 0 30rpx;
+  height: 76rpx;
+  padding: 0 32rpx;
   border-radius: 999rpx;
-  background: #1d1d1f;
+  background: linear-gradient(180deg, #2c2c2e 0%, #161618 100%);
   color: #ffffff;
   font-size: 25rpx;
   font-weight: 600;
-  box-shadow: 0 12rpx 28rpx rgba(15, 23, 42, 0.26);
+  box-shadow: 0 12rpx 30rpx rgba(15, 23, 42, 0.28);
 }
 
 .mark-fab-plus {
@@ -314,7 +315,7 @@
 }
 
 .spot-swiper {
-  height: 324rpx;
+  height: 326rpx;
   width: 100%;
 }
 
@@ -323,7 +324,7 @@
 }
 
 .spot-card {
-  height: 304rpx;
+  height: 306rpx;
   border-radius: 40rpx;
   padding: 24rpx 24rpx 20rpx;
   display: flex;
@@ -338,12 +339,13 @@
 
 .spot-cover-wrap {
   position: relative;
-  width: 162rpx;
-  height: 162rpx;
-  border-radius: 26rpx;
+  width: 164rpx;
+  height: 164rpx;
+  border-radius: 28rpx;
   overflow: hidden;
   flex-shrink: 0;
   background: #e2e8f0;
+  box-shadow: 0 6rpx 16rpx rgba(15, 23, 42, 0.1);
 }
 
 .spot-cover {
@@ -384,8 +386,11 @@
   white-space: nowrap;
 }
 
-.spot-rate {
-  font-size: 23rpx;
+.spot-rate-pill {
+  padding: 3rpx 12rpx;
+  border-radius: 999rpx;
+  background: #fffbeb;
+  font-size: 21rpx;
   font-weight: 700;
   color: #ff9500;
   flex-shrink: 0;
@@ -436,7 +441,7 @@
   align-items: center;
   justify-content: space-between;
   padding-top: 16rpx;
-  border-top: 1rpx solid rgba(15, 23, 42, 0.07);
+  border-top: 1rpx solid rgba(15, 23, 42, 0.06);
 }
 
 .like-pill {
@@ -460,12 +465,13 @@
   height: 56rpx;
   padding: 0 28rpx;
   border-radius: 999rpx;
-  background: #007aff;
+  background: linear-gradient(180deg, #1687ff 0%, #007aff 100%);
   color: #ffffff;
   display: inline-flex;
   align-items: center;
   font-size: 23rpx;
   font-weight: 600;
+  box-shadow: 0 6rpx 16rpx rgba(0, 122, 255, 0.26);
 }
 
 .empty-card {

@@ -44,12 +44,13 @@
 }
 
 .scenario-tag {
-  padding: 10rpx 22rpx;
+  padding: 11rpx 22rpx;
   border-radius: 999rpx;
-  background: #f2f2f7;
-  color: #475569;
+  background: rgba(242, 244, 248, 0.92);
+  border: 1rpx solid rgba(15, 23, 42, 0.05);
+  color: #334155;
   font-size: 22rpx;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .input-row {
@@ -58,10 +59,11 @@
 
 .ms-input {
   width: 100%;
-  height: 86rpx;
-  background: #f2f2f7;
+  height: 88rpx;
+  background: #f2f4f8;
+  border: 1.5rpx solid rgba(15, 23, 42, 0.04);
   border-radius: 999rpx;
-  padding: 0 30rpx;
+  padding: 0 32rpx;
   font-size: 27rpx;
   color: #1d1d1f;
 }
@@ -72,33 +74,65 @@
 
 .empathy-card {
   padding: 28rpx 30rpx;
-  margin-bottom: 20rpx;
+  margin-bottom: 22rpx;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96) 0%, rgba(240, 247, 255, 0.92) 100%);
+}
+
+.empathy-card-done {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96) 0%, rgba(236, 253, 245, 0.95) 100%);
+  border-color: rgba(52, 199, 89, 0.28);
 }
 
 .empathy-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 14rpx;
   margin-bottom: 14rpx;
+}
+
+.empathy-goal-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  min-width: 0;
+  flex: 1;
+}
+
+.empathy-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 999rpx;
+  background: #007aff;
+  flex-shrink: 0;
+}
+
+.empathy-dot-done {
+  background: #34c759;
 }
 
 .empathy-goal {
   font-size: 24rpx;
-  font-weight: 600;
-  color: #64748b;
-  max-width: 420rpx;
+  font-weight: 700;
+  color: #475569;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .empathy-progress {
-  padding: 6rpx 18rpx;
+  padding: 7rpx 20rpx;
   border-radius: 999rpx;
-  background: rgba(0, 122, 255, 0.1);
+  background: rgba(0, 122, 255, 0.12);
   color: #007aff;
   font-size: 21rpx;
   font-weight: 700;
+  flex-shrink: 0;
+}
+
+.empathy-progress-done {
+  background: rgba(52, 199, 89, 0.16);
+  color: #15803d;
 }
 
 .empathy-note {
@@ -106,14 +140,21 @@
   font-size: 26rpx;
   font-weight: 500;
   color: #1d1d1f;
-  line-height: 1.6;
+  line-height: 1.62;
   margin-bottom: 18rpx;
 }
 
+.prog-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
 .prog-track {
-  height: 10rpx;
+  flex: 1;
+  height: 12rpx;
   border-radius: 999rpx;
-  background: #f1f5f9;
+  background: rgba(15, 23, 42, 0.06);
   overflow: hidden;
 }
 
@@ -124,9 +165,18 @@
   transition: width 0.35s ease;
 }
 
+.prog-pct {
+  font-size: 21rpx;
+  font-weight: 700;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+  min-width: 56rpx;
+  text-align: right;
+}
+
 .step-card {
   padding: 28rpx;
-  margin-bottom: 18rpx;
+  margin-bottom: 20rpx;
 }
 
 .step-done {
@@ -140,10 +190,11 @@
 }
 
 .step-check {
-  width: 44rpx;
-  height: 44rpx;
+  width: 46rpx;
+  height: 46rpx;
   border-radius: 999rpx;
   border: 3rpx solid #cbd5e1;
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -151,12 +202,14 @@
   font-size: 24rpx;
   font-weight: 700;
   flex-shrink: 0;
-  margin-top: 2rpx;
+  margin-top: 4rpx;
+  transition: all 0.2s ease;
 }
 
 .step-check-on {
-  background: #34c759;
-  border-color: #34c759;
+  background: linear-gradient(180deg, #34d399 0%, #22c55e 100%);
+  border-color: #22c55e;
+  box-shadow: 0 6rpx 14rpx rgba(34, 197, 94, 0.28);
 }
 
 .step-body {
@@ -167,14 +220,47 @@
 .step-head {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  gap: 12rpx;
+}
+
+.step-title-group {
+  display: flex;
   align-items: center;
   gap: 12rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.step-num {
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.step-num-0 {
+  background: rgba(0, 122, 255, 0.12);
+  color: #007aff;
+}
+
+.step-num-1 {
+  background: rgba(175, 82, 222, 0.13);
+  color: #af52de;
+}
+
+.step-num-2 {
+  background: rgba(52, 199, 89, 0.14);
+  color: #15803d;
 }
 
 .step-title {
   font-size: 28rpx;
   font-weight: 700;
   color: #1d1d1f;
+  line-height: 1.35;
 }
 
 .step-title-done {
@@ -182,18 +268,22 @@
   text-decoration: line-through;
 }
 
-.step-min {
-  font-size: 21rpx;
-  color: #94a3b8;
-  font-weight: 600;
+.step-min-pill {
+  padding: 5rpx 14rpx;
+  border-radius: 999rpx;
+  background: #f2f4f8;
+  color: #64748b;
+  font-size: 20rpx;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 .step-detail {
   display: block;
   font-size: 24rpx;
   color: #475569;
-  line-height: 1.58;
-  margin-top: 10rpx;
+  line-height: 1.62;
+  margin-top: 12rpx;
 }
 
 .step-actions {
@@ -201,6 +291,8 @@
   align-items: center;
   justify-content: space-between;
   margin-top: 22rpx;
+  padding-top: 18rpx;
+  border-top: 1rpx solid rgba(15, 23, 42, 0.05);
 }
 
 .edit-link {
@@ -213,11 +305,17 @@
 .focus-btn {
   padding: 14rpx 28rpx;
   border-radius: 999rpx;
-  background: #007aff;
+  background: linear-gradient(180deg, #1687ff 0%, #007aff 100%);
   color: #ffffff;
   font-size: 23rpx;
   font-weight: 600;
-  box-shadow: 0 8rpx 18rpx rgba(0, 122, 255, 0.22);
+  box-shadow: 0 8rpx 20rpx rgba(0, 122, 255, 0.24);
+}
+
+.focus-btn-done {
+  background: rgba(0, 122, 255, 0.1);
+  color: #007aff;
+  box-shadow: none;
 }
 
 .history-wrap {
@@ -276,23 +374,53 @@
   margin-bottom: 34rpx;
 }
 
+.timer-halo {
+  width: 396rpx;
+  height: 396rpx;
+  border-radius: 999rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, rgba(0, 122, 255, 0.14) 0%, rgba(0, 122, 255, 0.03) 68%, transparent 100%);
+  margin-bottom: 24rpx;
+}
+
+.timer-halo-pulse {
+  animation: breathHalo 2.6s ease-in-out infinite;
+}
+
+.timer-halo-done {
+  background: radial-gradient(circle, rgba(52, 199, 89, 0.18) 0%, rgba(52, 199, 89, 0.03) 70%, transparent 100%);
+}
+
+@keyframes breathHalo {
+  0%, 100% {
+    transform: scale(0.98);
+  }
+  50% {
+    transform: scale(1.035);
+  }
+}
+
 .timer-circle {
-  width: 340rpx;
-  height: 340rpx;
+  width: 336rpx;
+  height: 336rpx;
   border-radius: 999rpx;
   border: 14rpx solid #007aff;
-  background: #f8fafc;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f8ff 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 12rpx 32rpx rgba(0, 122, 255, 0.14);
-  margin-bottom: 24rpx;
+  box-shadow:
+    inset 0 4rpx 14rpx rgba(0, 122, 255, 0.08),
+    0 16rpx 36rpx rgba(0, 122, 255, 0.18);
 }
 
 .timer-circle-done {
   border-color: #34c759;
-  background: #ecfdf5;
+  background: linear-gradient(180deg, #ffffff 0%, #ecfdf5 100%);
+  box-shadow: 0 16rpx 36rpx rgba(52, 199, 89, 0.2);
 }
 
 .timer-clock {

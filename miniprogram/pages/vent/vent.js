@@ -1,6 +1,8 @@
 const ventStore = require('../../utils/ventStore');
 const auth = require('../../utils/auth');
 
+const IDLE_WAVE_BARS = [14, 22, 16, 28, 18, 24, 16, 26, 20, 14].map((h, id) => ({ id, h }));
+
 Page({
   data: {
     menuTop: 24,
@@ -16,6 +18,7 @@ Page({
     shouting: false,
     shoutPercent: 0,
     shoutDb: 48,
+    waveBars: IDLE_WAVE_BARS,
     shredding: false,
     shredSnapshot: '',
     showCareCard: false,
@@ -113,12 +116,24 @@ Page({
   },
 
   startShout() {
-    this.setData({ shouting: true, shoutPercent: 15, shoutDb: 58 });
+    const initialBars = IDLE_WAVE_BARS.map((b) => ({
+      id: b.id,
+      h: Math.round(16 + Math.random() * 20),
+    }));
+    this.setData({ shouting: true, shoutPercent: 15, shoutDb: 58, waveBars: initialBars });
     wx.vibrateShort({ type: 'light' });
     if (this._shoutTimer) clearInterval(this._shoutTimer);
     this._shoutTimer = setInterval(() => {
       const next = Math.min(100, this.data.shoutPercent + 6);
-      this.setData({ shoutPercent: next, shoutDb: Math.round(45 + next * 0.68) });
+      const liveBars = IDLE_WAVE_BARS.map((b) => ({
+        id: b.id,
+        h: Math.round(14 + Math.random() * (16 + next * 0.24)),
+      }));
+      this.setData({
+        shoutPercent: next,
+        shoutDb: Math.round(45 + next * 0.68),
+        waveBars: liveBars,
+      });
       if (next % 18 === 0) wx.vibrateShort({ type: 'light' });
     }, 65);
   },
@@ -127,7 +142,7 @@ Page({
     if (!this.data.shouting) return;
     if (this._shoutTimer) clearInterval(this._shoutTimer);
     const level = this.data.shoutPercent;
-    this.setData({ shouting: false, shoutPercent: 0 });
+    this.setData({ shouting: false, shoutPercent: 0, waveBars: IDLE_WAVE_BARS });
     wx.vibrateShort({ type: 'medium' });
     wx.showToast({
       title: level > 70 ? '满格声波已排空 🌬️' : '长叹已散入晚风里～',

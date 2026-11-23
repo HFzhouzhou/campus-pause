@@ -6,6 +6,7 @@
 - 已预留微信小程序 wx.login (jscode2session) 与微信头像昵称同步接口
 """
 
+import base64
 import json
 import os
 import re
@@ -27,6 +28,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 HOST = os.environ.get("API_HOST", "127.0.0.1")
 PORT = int(os.environ.get("API_PORT", "3088"))
 DB_PATH = os.environ.get("DB_PATH", "/srv/campus-pause/api/campus_pause.db")
+AVATAR_DIR = os.environ.get("AVATAR_DIR", "/srv/campus-pause/api/avatars")
+PUBLIC_API_BASE = os.environ.get("PUBLIC_API_BASE", "https://pause.jingshutech.top/campus-pause-api")
 
 SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.163.com")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "465"))
@@ -227,9 +230,21 @@ class AuthHandler(BaseHTTPRequestHandler):
         self._send_cors()
         self.end_headers()
 
+    def do_HEAD(self) -> None:
+        self._serve_get(head_only=True)
+
     def do_GET(self) -> None:
+        self._serve_get(head_only=False)
+
+    def _serve_get(self, head_only: bool = False) -> None:
         path = urllib.parse.urlparse(self.path).path.rstrip("/") or "/"
         if path == "/health":
+            if head_only:
+                self.send_response(200)
+                self._send_cors()
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                return
             self._json(200, {"ok": True, "service": "campus-pause-auth"})
             return
         if path == "/auth/me":
@@ -238,6 +253,33 @@ class AuthHandler(BaseHTTPRequestHandler):
                 self._json(401, {"message": "登录已过期，请重新登录"})
                 return
             self._json(200, {"user": row_to_user(user_row)})
+            return
+        if path.startswith("/avatars/"):
+            fname = os.path.basename(path[len("/avatars/"):])
+            if not re.match(r"^[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp)$", fname):
+                self._json(404, {"message": "Not Found"})
+                return
+            fpath = os.path.join(AVATAR_DIR, fname)
+            if not os.path.isfile(fpath):
+                self._json(404, {"message": "Avatar Not Found"})
+                return
+            ext = fname.rsplit(".", 1)[-1].lower()
+            mime = {
+                "jpg": "image/jpeg",
+                "jpeg": "image/jpeg",
+                "png": "image/png",
+                "webp": "image/webp",
+            }.get(ext, "application/octet-stream")
+            with open(fpath, "rb") as fp:
+                raw = fp.read()
+            self.send_response(200)
+            self._send_cors()
+            self.send_header("Content-Type", mime)
+            self.send_header("Cache-Control", "public, max-age=2592000, immutable")
+            self.send_header("Content-Length", str(len(raw)))
+            self.end_headers()
+            if not head_only:
+                self.wfile.write(raw)
             return
         self._json(404, {"message": "Not Found"})
 
@@ -253,6 +295,9 @@ class AuthHandler(BaseHTTPRequestHandler):
             return
         if path == "/auth/profile":
             self._handle_update_profile(data)
+            return
+        if path == "/auth/upload-avatar":
+            self._handle_upload_avatar(data)
             return
         if path == "/auth/wechat-miniprogram":
             self._handle_wechat_login(data)
@@ -426,11 +471,65 @@ class AuthHandler(BaseHTTPRequestHandler):
             finally:
                 conn.close()
 
+    def _handle_upload_avatar(self, data: dict) -> None:
+        """接收小程序 chooseAvatar 选择的本地临时头像 base64，持久化存储并返回永久 HTTPS 头像链接"""
+        raw_b64 = str(data.get("base64", "") or "").strip()
+        if not raw_b64:
+            self._json(400, {"message": "缺少头像数据"})
+            return
+        if "," in raw_b64 and raw_b64.startswith("data:"):
+            raw_b64 = raw_b64.split(",", 1)[1]
+        try:
+            img_bytes = base64.b64decode(raw_b64, validate=True)
+        except Exception:
+            self._json(400, {"message": "头像数据格式无效"})
+            return
+        if len(img_bytes) < 64 or len(img_bytes) > 1_500_000:
+            self._json(400, {"message": "头像文件大小需小于 1.5MB"})
+            return
+
+        ext = "jpg"
+        if img_bytes[:8] == b"\x89PNG\r\n\x1a\n":
+            ext = "png"
+        elif img_bytes[:4] == b"RIFF" and img_bytes[8:12] == b"WEBP":
+            ext = "webp"
+        elif img_bytes[:2] == b"\xff\xd8":
+            ext = "jpg"
+        else:
+            self._json(400, {"message": "仅支持 JPG / PNG / WebP 图片"})
+            return
+
+        os.makedirs(AVATAR_DIR, exist_ok=True)
+        fname = f"av_{int(time.time())}_{secrets.token_hex(6)}.{ext}"
+        with open(os.path.join(AVATAR_DIR, fname), "wb") as fp:
+            fp.write(img_bytes)
+
+        avatar_url = f"{PUBLIC_API_BASE.rstrip('/')}/avatars/{fname}"
+
+        # 若携带了有效登录 token，顺手直接更新数据库里的头像字段
+        user_row = self._get_auth_user()
+        if user_row:
+            iso_now = datetime.now(timezone.utc).isoformat()
+            with db_lock:
+                conn = get_db()
+                try:
+                    conn.execute(
+                        "UPDATE users SET avatar_url = ?, updated_at = ? WHERE uid = ?",
+                        (avatar_url, iso_now, user_row["uid"]),
+                    )
+                    conn.commit()
+                finally:
+                    conn.close()
+
+        self._json(200, {"ok": True, "avatarUrl": avatar_url})
+
     def _handle_wechat_login(self, data: dict) -> None:
-        """预留：微信小程序 wx.login(code) + 头像昵称直接授权落库接口"""
+        """微信小程序 wx.login(code) + 头像昵称直接授权落库接口"""
         wx_code = str(data.get("wxCode", "")).strip()
         nick_name = str(data.get("nickName", "") or "").strip()[:20]
         avatar_url = str(data.get("avatarUrl", "") or "").strip()
+        if avatar_url.startswith("wxfile://") or avatar_url.startswith("http://tmp/"):
+            avatar_url = ""
 
         if not WECHAT_APPID or not WECHAT_SECRET:
             self._json(
@@ -466,6 +565,7 @@ class AuthHandler(BaseHTTPRequestHandler):
 
         now = int(time.time())
         iso_now = datetime.now(timezone.utc).isoformat()
+        is_new_user = False
         with db_lock:
             conn = get_db()
             try:
@@ -473,9 +573,10 @@ class AuthHandler(BaseHTTPRequestHandler):
                     "SELECT * FROM users WHERE wx_openid = ?", (openid,)
                 ).fetchone()
                 if not user_row:
+                    is_new_user = True
                     uid = "wx_" + secrets.token_hex(6)
-                    nickname = nick_name or f"微信同学_{uid[-4:]}"
-                    avatar = avatar_url or PRESET_AVATARS[0]
+                    nickname = nick_name or f"五合同学_{uid[-4:]}"
+                    avatar = avatar_url or "/assets/avatars/avatar-1.png"
                     conn.execute(
                         """
                         INSERT INTO users (uid, nickname, avatar_url, auth_provider, wx_openid, wx_unionid, school_name, created_at, updated_at)
@@ -504,7 +605,22 @@ class AuthHandler(BaseHTTPRequestHandler):
                     (token, user_row["uid"], now, now + 30 * 86400),
                 )
                 conn.commit()
-                self._json(200, {"ok": True, "token": token, "user": row_to_user(user_row)})
+                user_dict = row_to_user(user_row)
+                needs_profile = (
+                    is_new_user
+                    or user_dict["nickname"].startswith("五合同学_")
+                    or user_dict["nickname"].startswith("微信同学_")
+                )
+                self._json(
+                    200,
+                    {
+                        "ok": True,
+                        "token": token,
+                        "user": user_dict,
+                        "isNewUser": is_new_user,
+                        "needsProfile": needs_profile,
+                    },
+                )
             finally:
                 conn.close()
 
