@@ -8,6 +8,8 @@ import {
   ventService,
 } from '../../services/ventService';
 import { soundEngine, triggerHaptic } from '../../utils/audio';
+import { useAuth } from '../../context/AuthContext';
+import { AccountPill } from '../common/AccountPill';
 import { HoldToShoutButton } from './HoldToShoutButton';
 import { VortexShredder } from './VortexShredder';
 import { CareCard } from './CareCard';
@@ -18,6 +20,7 @@ interface VentPageProps {
 }
 
 export const VentPage: React.FC<VentPageProps> = ({ onShowToast }) => {
+  const { requireAuth } = useAuth();
   const [ventText, setVentText] = useState('');
   const [isShredding, setIsShredding] = useState(false);
   const [shredSnapshot, setShredSnapshot] = useState('');
@@ -60,46 +63,47 @@ export const VentPage: React.FC<VentPageProps> = ({ onShowToast }) => {
   };
 
   const handleHugComplete = (bubbleId: string) => {
-    const target = bubbles.find((b) => b.id === bubbleId);
-    if (target && !target.huggedByMe) {
-      setBubbles(ventService.toggleHug(bubbleId));
-    }
-    onShowToast('这份满格的暖心抱抱已传递给同校同学 🫂', 'warm');
+    requireAuth('给同校泡泡送出抱抱', () => {
+      const target = bubbles.find((b) => b.id === bubbleId);
+      if (target && !target.huggedByMe) {
+        setBubbles(ventService.toggleHug(bubbleId));
+      }
+      onShowToast('这份满格的暖心抱抱已传递给同校同学 🫂', 'warm');
+    });
   };
 
   const handleEmpathyTap = (bubbleId: string) => {
-    setBubbles(ventService.toggleEmpathy(bubbleId));
+    requireAuth('点亮情绪同感', () => {
+      setBubbles(ventService.toggleEmpathy(bubbleId));
+    });
   };
 
   return (
-    <div className="relative w-full h-full overflow-y-auto custom-scrollbar bg-[#06080f]">
-      {/* 柔和苹果氛围光球 */}
-      <div className="pointer-events-none fixed -top-28 -left-24 w-80 h-80 rounded-full bg-amber-400/10 blur-[120px]" />
-      <div className="pointer-events-none fixed bottom-20 -right-24 w-96 h-96 rounded-full bg-violet-500/12 blur-[130px]" />
-
-      <div className="relative z-10 max-w-2xl mx-auto px-4 pt-7 pb-32 space-y-7">
-        {/* Apple 极简大标题 */}
-        <header className="flex items-end justify-between gap-3">
+    <div className="relative w-full h-full overflow-y-auto custom-scrollbar ios-canvas">
+      <div className="relative z-10 max-w-2xl mx-auto px-4 pt-6 pb-32 space-y-6">
+        <header className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45 mb-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400 mb-0.5">
               Instant Vent · 阅后即焚
             </p>
-            <h1 className="text-[26px] sm:text-3xl font-bold text-white tracking-tight leading-tight">
+            <h1 className="text-[28px] sm:text-[32px] font-bold text-[#1D1D1F] tracking-tight leading-tight">
               情绪粉碎机
             </h1>
-            <p className="text-xs sm:text-sm text-white/55 mt-1">
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
               把崩溃丢进黑洞，清空后绝不留任何记录。
             </p>
           </div>
-          {shredCount > 0 && (
-            <div className="liquid-glass rounded-full px-3.5 py-1.5 text-xs text-white/90 shrink-0">
-              已清空 <span className="font-semibold text-emerald-300">{shredCount}</span> 次
-            </div>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {shredCount > 0 && (
+              <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full bg-white text-xs font-semibold text-slate-700 shadow-sm">
+                已清空 {shredCount} 次
+              </span>
+            )}
+            <AccountPill />
+          </div>
         </header>
 
-        {/* 液态玻璃宣泄卡片 */}
-        <section className="liquid-glass rounded-[30px] p-5 space-y-4">
+        <section className="ios-card rounded-[28px] p-5 space-y-4">
           <div className="flex flex-wrap gap-1.5">
             {QUICK_VENT_TAGS.map((tag) => (
               <button
@@ -111,7 +115,7 @@ export const VentPage: React.FC<VentPageProps> = ({ onShowToast }) => {
                   );
                   triggerHaptic(10);
                 }}
-                className="px-3 py-1 rounded-full text-[11.5px] bg-white/[0.07] hover:bg-white/[0.14] text-white/80 hover:text-white border border-white/10 transition-colors"
+                className="px-3 py-1 rounded-full text-[11.5px] font-medium bg-[#F2F2F7] hover:bg-slate-200/80 text-slate-700 transition-colors"
               >
                 + {tag}
               </button>
@@ -124,9 +128,9 @@ export const VentPage: React.FC<VentPageProps> = ({ onShowToast }) => {
               value={ventText}
               onChange={(e) => setVentText(e.target.value)}
               placeholder="写下让你崩溃的事… 点粉碎后直接吸入黑洞，本地零留存。"
-              className="w-full rounded-[22px] bg-black/35 border border-white/12 p-4 text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-white/35 resize-none leading-relaxed"
+              className="w-full rounded-[20px] bg-[#F2F2F7] border border-transparent focus:border-[#007AFF] focus:bg-white p-4 text-sm text-[#1D1D1F] placeholder:text-slate-400 focus:outline-none resize-none leading-relaxed transition-all"
             />
-            <span className="absolute bottom-3 right-4 text-[10.5px] text-white/35">
+            <span className="absolute bottom-3 right-4 text-[10.5px] text-slate-400">
               不上传 · 阅后即焚
             </span>
           </div>
@@ -139,33 +143,31 @@ export const VentPage: React.FC<VentPageProps> = ({ onShowToast }) => {
             whileTap={{ scale: 0.97 }}
             disabled={!ventText.trim() || isShredding}
             onClick={handleShred}
-            className="w-full py-3.5 rounded-full bg-white text-slate-950 font-semibold text-sm flex items-center justify-center gap-2 shadow-[0_10px_30px_rgba(255,255,255,0.18)] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            className="w-full py-3.5 rounded-full bg-[#1D1D1F] hover:bg-black text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-[0_10px_26px_rgba(15,23,42,0.18)] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           >
-            <Flame className="w-4 h-4 fill-slate-950" />
+            <Flame className="w-4 h-4 text-[#FF9500] fill-[#FF9500]" />
             彻底粉碎（吸入黑洞）
           </motion.button>
         </section>
 
-        {/* 隐形心理安全兜底 */}
         <CareCard
           visible={showCareCard}
           onDismiss={() => setShowCareCard(false)}
         />
 
-        {/* 同校共鸣泡泡池 */}
         <section className="space-y-4">
           <div className="flex items-center justify-between gap-2 px-1">
             <div>
-              <h2 className="text-base font-semibold text-white flex items-center gap-1.5 tracking-tight">
-                <Sparkles className="w-4 h-4 text-white/80" />
+              <h2 className="text-[17px] font-bold text-[#1D1D1F] flex items-center gap-1.5 tracking-tight">
+                <Sparkles className="w-4 h-4 text-[#007AFF]" />
                 同校悬浮共鸣泡泡
               </h2>
-              <p className="text-[11.5px] text-white/50 mt-0.5">
+              <p className="text-[11.5px] text-slate-500 mt-0.5">
                 长按任意泡泡蓄满暖光送出抱抱，绝无评论区打扰
               </p>
             </div>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full liquid-glass text-[10.5px] text-white/65 shrink-0">
-              <ShieldOff className="w-3 h-3 text-emerald-300" />
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white text-[10.5px] font-medium text-slate-500 shadow-sm shrink-0">
+              <ShieldOff className="w-3 h-3 text-[#34C759]" />
               关闭评论区
             </span>
           </div>

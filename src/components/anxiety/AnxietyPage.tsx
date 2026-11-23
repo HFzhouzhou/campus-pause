@@ -16,6 +16,8 @@ import {
   QUICK_ANXIETY_PROMPTS,
 } from '../../services/anxietyService';
 import { soundEngine, triggerHaptic } from '../../utils/audio';
+import { useAuth } from '../../context/AuthContext';
+import { AccountPill } from '../common/AccountPill';
 import { FocusTimerModal } from './FocusTimerModal';
 
 interface AnxietyPageProps {
@@ -23,6 +25,7 @@ interface AnxietyPageProps {
 }
 
 export const AnxietyPage: React.FC<AnxietyPageProps> = ({ onShowToast }) => {
+  const { requireAuth } = useAuth();
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamPreview, setStreamPreview] = useState('');
@@ -39,10 +42,7 @@ export const AnxietyPage: React.FC<AnxietyPageProps> = ({ onShowToast }) => {
   const activePlan =
     history.find((p) => p.id === activePlanId) ?? history[0] ?? null;
 
-  const handleDecompose = async (customPrompt?: string) => {
-    const prompt = (customPrompt ?? input).trim();
-    if (!prompt || isStreaming) return;
-
+  const executeDecompose = async (prompt: string) => {
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -69,6 +69,14 @@ export const AnxietyPage: React.FC<AnxietyPageProps> = ({ onShowToast }) => {
     } finally {
       setIsStreaming(false);
     }
+  };
+
+  const handleDecompose = (customPrompt?: string) => {
+    const prompt = (customPrompt ?? input).trim();
+    if (!prompt || isStreaming) return;
+    requireAuth('使用 AI 拆解焦虑并同步计划', () => {
+      void executeDecompose(prompt);
+    });
   };
 
   const handleCompleteStep = (stepId: string) => {
@@ -98,31 +106,30 @@ export const AnxietyPage: React.FC<AnxietyPageProps> = ({ onShowToast }) => {
     : 0;
 
   return (
-    <div className="relative w-full h-full overflow-y-auto custom-scrollbar bg-[#06080f]">
-      <div className="pointer-events-none fixed -top-24 -right-24 w-80 h-80 rounded-full bg-violet-500/14 blur-[120px]" />
-      <div className="pointer-events-none fixed bottom-24 -left-24 w-72 h-72 rounded-full bg-emerald-400/10 blur-[110px]" />
-
-      <div className="relative z-10 max-w-2xl mx-auto px-4 pt-7 pb-32 space-y-6">
-        <header className="flex items-end justify-between gap-3">
+    <div className="relative w-full h-full overflow-y-auto custom-scrollbar ios-canvas">
+      <div className="relative z-10 max-w-2xl mx-auto px-4 pt-6 pb-32 space-y-6">
+        <header className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45 mb-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400 mb-0.5">
               Micro-Step AI · 反拖延拆解
             </p>
-            <h1 className="text-[26px] sm:text-3xl font-bold text-white tracking-tight leading-tight">
+            <h1 className="text-[28px] sm:text-[32px] font-bold text-[#1D1D1F] tracking-tight leading-tight">
               焦虑拆解
             </h1>
-            <p className="text-xs sm:text-sm text-white/55 mt-1">
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
               把让人失控的巨型任务，切成 3 个 10 分钟就能动手的微步骤。
             </p>
           </div>
-
-          <span className="hidden sm:inline-flex items-center gap-1.5 liquid-glass rounded-full px-3 py-1.5 text-[11px] text-white/75 shrink-0">
-            <Cpu className="w-3.5 h-3.5 text-emerald-300" />
-            {llmReady ? 'LLM 流式引擎' : '内置智能引擎'}
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="hidden sm:inline-flex items-center gap-1.5 bg-white rounded-full px-3 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm">
+              <Cpu className="w-3.5 h-3.5 text-[#34C759]" />
+              {llmReady ? 'LLM 流式' : '智能引擎'}
+            </span>
+            <AccountPill />
+          </div>
         </header>
 
-        <section className="liquid-glass rounded-[30px] p-5 space-y-4">
+        <section className="ios-card rounded-[28px] p-5 space-y-4">
           <div className="flex flex-wrap gap-1.5">
             {QUICK_ANXIETY_PROMPTS.map((q) => (
               <button
@@ -130,7 +137,7 @@ export const AnxietyPage: React.FC<AnxietyPageProps> = ({ onShowToast }) => {
                 type="button"
                 onClick={() => handleDecompose(q)}
                 disabled={isStreaming}
-                className="px-3 py-1 rounded-full text-[11.5px] bg-white/[0.07] hover:bg-white/[0.14] text-white/80 hover:text-white border border-white/10 transition-colors disabled:opacity-40"
+                className="px-3 py-1 rounded-full text-[11.5px] font-medium bg-[#F2F2F7] hover:bg-slate-200/80 text-slate-700 transition-colors disabled:opacity-40"
               >
                 {q}
               </button>
@@ -146,14 +153,14 @@ export const AnxietyPage: React.FC<AnxietyPageProps> = ({ onShowToast }) => {
                 if (e.key === 'Enter') handleDecompose();
               }}
               placeholder="输入让你焦虑的大任务，例如：后天考线代还没复习…"
-              className="flex-1 rounded-full bg-black/35 border border-white/14 px-4 py-3 text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-white/35"
+              className="flex-1 rounded-full bg-[#F2F2F7] border border-transparent focus:border-[#007AFF] focus:bg-white px-4 py-3 text-sm text-[#1D1D1F] placeholder:text-slate-400 focus:outline-none transition-all"
             />
             <motion.button
               type="button"
               whileTap={{ scale: 0.96 }}
               disabled={!input.trim() || isStreaming}
               onClick={() => handleDecompose()}
-              className="px-5 py-3 rounded-full bg-white text-slate-950 font-semibold text-sm flex items-center justify-center gap-1.5 disabled:opacity-35 shrink-0 shadow-[0_8px_24px_rgba(255,255,255,0.16)]"
+              className="px-5 py-3 rounded-full bg-[#007AFF] hover:bg-[#0066D6] text-white font-semibold text-sm flex items-center justify-center gap-1.5 disabled:opacity-35 shrink-0 shadow-[0_8px_22px_rgba(0,122,255,0.26)] transition-all"
             >
               <Wand2 className="w-4 h-4" />
               {isStreaming ? '拆解中…' : '拆成 3 小步'}
@@ -165,15 +172,15 @@ export const AnxietyPage: React.FC<AnxietyPageProps> = ({ onShowToast }) => {
           <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="liquid-glass rounded-[28px] p-5 space-y-2"
+            className="ios-card rounded-[26px] p-5 space-y-2"
           >
-            <div className="flex items-center gap-2 text-xs text-white/75 font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <div className="flex items-center gap-2 text-xs text-[#007AFF] font-semibold">
+              <span className="w-2 h-2 rounded-full bg-[#007AFF] animate-ping" />
               正在为你拆解最小可行微行动…
             </div>
-            <pre className="whitespace-pre-wrap font-sans text-sm text-white/90 leading-relaxed">
+            <pre className="whitespace-pre-wrap font-sans text-sm text-[#1D1D1F] leading-relaxed">
               {streamPreview}
-              <span className="inline-block w-1.5 h-4 bg-white ml-0.5 align-middle animate-pulse" />
+              <span className="inline-block w-1.5 h-4 bg-[#007AFF] ml-0.5 align-middle animate-pulse" />
             </pre>
           </motion.section>
         )}
@@ -185,19 +192,19 @@ export const AnxietyPage: React.FC<AnxietyPageProps> = ({ onShowToast }) => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-3.5"
           >
-            <div className="liquid-glass rounded-[28px] p-5 space-y-3">
+            <div className="ios-card rounded-[26px] p-5 space-y-3">
               <div className="flex items-center justify-between gap-2 text-xs">
-                <span className="text-white/75 font-medium truncate">
+                <span className="text-slate-500 font-medium truncate">
                   {activePlan.prompt}
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-white text-[11px] font-medium shrink-0">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#007AFF]/10 text-[#007AFF] text-[11px] font-semibold shrink-0">
                   {completedCount} / {activePlan.steps.length} 已完成
                 </span>
               </div>
-              <p className="text-sm text-white/85 leading-relaxed">
+              <p className="text-sm text-[#1D1D1F] leading-relaxed font-medium">
                 “{activePlan.empathyNote}”
               </p>
-              <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+              <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
                 <motion.div
                   initial={false}
                   animate={{
@@ -206,7 +213,7 @@ export const AnxietyPage: React.FC<AnxietyPageProps> = ({ onShowToast }) => {
                       100
                     }%`,
                   }}
-                  className="h-full rounded-full bg-white"
+                  className="h-full rounded-full bg-gradient-to-r from-[#007AFF] to-[#34C759]"
                 />
               </div>
             </div>
@@ -218,18 +225,18 @@ export const AnxietyPage: React.FC<AnxietyPageProps> = ({ onShowToast }) => {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.06 }}
-                  className={`liquid-glass rounded-[26px] p-4 sm:p-5 transition-all ${
-                    step.completed ? 'opacity-75' : ''
+                  className={`ios-card rounded-[24px] p-4 sm:p-5 transition-all ${
+                    step.completed ? 'opacity-70' : ''
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     <button
                       type="button"
                       onClick={() => handleToggleCheck(step.id)}
-                      className="mt-0.5 shrink-0 text-white/45 hover:text-emerald-300 transition-colors"
+                      className="mt-0.5 shrink-0 text-slate-300 hover:text-[#34C759] transition-colors"
                     >
                       {step.completed ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-300" />
+                        <CheckCircle2 className="w-5 h-5 text-[#34C759]" />
                       ) : (
                         <Circle className="w-5 h-5" />
                       )}
@@ -238,20 +245,20 @@ export const AnxietyPage: React.FC<AnxietyPageProps> = ({ onShowToast }) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <h3
-                          className={`text-[15px] font-semibold tracking-tight ${
+                          className={`text-[15px] font-bold tracking-tight ${
                             step.completed
-                              ? 'text-white/60 line-through'
-                              : 'text-white'
+                              ? 'text-slate-400 line-through'
+                              : 'text-[#1D1D1F]'
                           }`}
                         >
                           0{index + 1} · {step.title}
                         </h3>
-                        <span className="inline-flex items-center gap-1 text-[11px] text-white/50 shrink-0">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 shrink-0">
                           <Clock className="w-3 h-3" />
                           {step.durationMinutes}m
                         </span>
                       </div>
-                      <p className="text-xs sm:text-[13px] text-white/65 mt-1.5 leading-relaxed">
+                      <p className="text-xs sm:text-[13px] text-slate-600 mt-1.5 leading-relaxed">
                         {step.detail}
                       </p>
 
@@ -261,8 +268,8 @@ export const AnxietyPage: React.FC<AnxietyPageProps> = ({ onShowToast }) => {
                           onClick={() => setTimerStep(step)}
                           className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${
                             step.completed
-                              ? 'bg-white/10 text-white/80 hover:bg-white/15'
-                              : 'bg-white text-slate-950 hover:bg-white/90'
+                              ? 'bg-[#F2F2F7] text-slate-600 hover:bg-slate-200'
+                              : 'bg-[#007AFF] text-white hover:bg-[#0066D6] shadow-sm'
                           }`}
                         >
                           <Play className="w-3 h-3 fill-current" />
@@ -279,7 +286,7 @@ export const AnxietyPage: React.FC<AnxietyPageProps> = ({ onShowToast }) => {
 
         {history.length > 1 && (
           <section className="space-y-2 pt-1">
-            <h3 className="text-xs font-medium text-white/45 flex items-center gap-1.5 px-1">
+            <h3 className="text-xs font-semibold text-slate-400 flex items-center gap-1.5 px-1">
               <History className="w-3.5 h-3.5" />
               最近拆解
             </h3>
@@ -289,10 +296,10 @@ export const AnxietyPage: React.FC<AnxietyPageProps> = ({ onShowToast }) => {
                   key={plan.id}
                   type="button"
                   onClick={() => setActivePlanId(plan.id)}
-                  className={`shrink-0 max-w-[200px] truncate px-3.5 py-1.5 rounded-full text-xs border transition-colors ${
+                  className={`shrink-0 max-w-[200px] truncate px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
                     activePlan?.id === plan.id
-                      ? 'bg-white text-slate-950 border-white font-medium'
-                      : 'liquid-glass text-white/70 border-white/12'
+                      ? 'bg-[#1D1D1F] text-white'
+                      : 'bg-white text-slate-600 shadow-sm'
                   }`}
                 >
                   {plan.prompt}

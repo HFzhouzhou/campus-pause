@@ -24,7 +24,7 @@ export interface AMapCanvasHandle {
 interface AMapCanvasProps {
   spots: HealingSpot[];
   selectedSpotId: string | null;
-  mapStyle: 'dark' | 'satellite';
+  mapStyle: 'light' | 'satellite';
   isPickMode: boolean;
   focusTarget: { lng: number; lat: number; zoom?: number; seq: number } | null;
   zoomTrigger: { delta: number; seq: number } | null;
@@ -109,13 +109,13 @@ export const AMapCanvas = forwardRef<AMapCanvasHandle, AMapCanvasProps>(
       el.innerHTML = `
         <span class="marker-ring-breathe" style="
           position:absolute; inset:-6px; border-radius:9999px;
-          background:rgba(56,189,248,0.32);
+          background:rgba(0,122,255,0.28);
         "></span>
         <span style="
           position:relative; z-index:2; width:14px; height:14px;
-          border-radius:9999px; background:#0A84FF;
+          border-radius:9999px; background:#007AFF;
           border:2.5px solid #FFFFFF;
-          box-shadow:0 0 14px rgba(10,132,255,0.85);
+          box-shadow:0 2px 10px rgba(0,122,255,0.55);
         "></span>
       `;
 
@@ -219,7 +219,6 @@ export const AMapCanvas = forwardRef<AMapCanvasHandle, AMapCanvasProps>(
       },
     }));
 
-    // 初始化高德地图 JS API 2.0
     useEffect(() => {
       const key = import.meta.env.VITE_AMAP_KEY?.trim();
       const securityCode = import.meta.env.VITE_AMAP_SECURITY_CODE?.trim();
@@ -229,7 +228,6 @@ export const AMapCanvas = forwardRef<AMapCanvasHandle, AMapCanvasProps>(
         return;
       }
 
-      // 关键避坑：必须在调用 AMapLoader.load() 之前挂载安全密钥
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any)._AMapSecurityConfig = {
         securityJsCode: securityCode || '',
@@ -251,26 +249,24 @@ export const AMapCanvas = forwardRef<AMapCanvasHandle, AMapCanvasProps>(
           if (destroyed || !containerRef.current) return;
           amapRef.current = AMap;
 
+          // 采用苹果白昼极简风底图 (amap://styles/whitesmoke)，清透高级不沉闷
           const map = new AMap.Map(containerRef.current, {
             zoom: 16.6,
             center: [CAMPUS_CENTER.lng, CAMPUS_CENTER.lat],
-            mapStyle: 'amap://styles/darkblue',
+            mapStyle: 'amap://styles/whitesmoke',
             viewMode: '2D',
             pitch: 0,
             animateEnable: true,
           });
 
-          // 比例尺控件
           map.addControl(new AMap.Scale({ position: 'LB' }));
 
-          // 预挂载高清卫星图与路网图层，默认隐藏，实现无闪烁丝滑切换
           const satLayer = new AMap.TileLayer.Satellite({ visible: false });
           const roadLayer = new AMap.TileLayer.RoadNet({ visible: false });
           map.add([satLayer, roadLayer]);
           satelliteLayerRef.current = satLayer;
           roadNetLayerRef.current = roadLayer;
 
-          // 初始化插件实例
           geocoderRef.current = new AMap.Geocoder({
             city: '南宁',
             radius: 300,
@@ -314,7 +310,6 @@ export const AMapCanvas = forwardRef<AMapCanvasHandle, AMapCanvasProps>(
           mapRef.current = map;
           onLoaded();
 
-          // 开屏默认聚焦广西外国语学院五合校区，并主动申请位置权限定位
           window.setTimeout(() => {
             if (!destroyed) {
               runGeolocation(false);
@@ -338,7 +333,6 @@ export const AMapCanvas = forwardRef<AMapCanvasHandle, AMapCanvasProps>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // 丝滑切换 暗黑标准图 / 高清卫星图
     useEffect(() => {
       const map = mapRef.current;
       const sat = satelliteLayerRef.current;
@@ -351,11 +345,10 @@ export const AMapCanvas = forwardRef<AMapCanvasHandle, AMapCanvasProps>(
       } else {
         sat.hide();
         road.hide();
-        map.setMapStyle('amap://styles/darkblue');
+        map.setMapStyle('amap://styles/whitesmoke');
       }
     }, [mapStyle]);
 
-    // 缩放控制
     useEffect(() => {
       const map = mapRef.current;
       if (!map || !zoomTrigger) return;
@@ -363,7 +356,6 @@ export const AMapCanvas = forwardRef<AMapCanvasHandle, AMapCanvasProps>(
       else map.zoomOut();
     }, [zoomTrigger]);
 
-    // 平移居中到目标点位
     useEffect(() => {
       const map = mapRef.current;
       if (!map || !focusTarget) return;
@@ -379,7 +371,7 @@ export const AMapCanvas = forwardRef<AMapCanvasHandle, AMapCanvasProps>(
       }
     }, [focusTarget]);
 
-    // 渲染苹果液态玻璃风格自定义视觉点位 (Custom Markers)
+    // 渲染苹果地图风格清爽白边立体气泡点位
     useEffect(() => {
       const map = mapRef.current;
       const AMap = amapRef.current;
@@ -393,7 +385,7 @@ export const AMapCanvas = forwardRef<AMapCanvasHandle, AMapCanvasProps>(
       const createdMarkers = spots.map((spot) => {
         const meta = getCategoryMeta(spot.category);
         const isSelected = spot.id === selectedSpotId;
-        const size = isSelected ? 52 : 40;
+        const size = isSelected ? 52 : 42;
 
         const container = document.createElement('div');
         container.style.position = 'relative';
@@ -416,17 +408,16 @@ export const AMapCanvas = forwardRef<AMapCanvasHandle, AMapCanvasProps>(
             <span class="marker-ring-breathe" style="
               position:absolute; inset:${isSelected ? '-8px' : '-5px'};
               border-radius:9999px;
-              background:${meta.accentHex}${isSelected ? '38' : '22'};
-              border:1px solid ${meta.accentHex}99;
-              box-shadow:0 0 22px ${meta.accentHex}70;
+              background:${meta.accentHex}${isSelected ? '33' : '22'};
+              border:1.5px solid ${meta.accentHex}88;
             "></span>
             <div style="
               position:relative; z-index:2;
               width:${size}px; height:${size}px;
               border-radius:9999px; overflow:hidden;
-              padding:2.5px;
-              background:linear-gradient(155deg, rgba(255,255,255,0.68), ${meta.accentHex}aa 48%, rgba(255,255,255,0.18));
-              box-shadow:0 10px 24px rgba(0,0,0,0.55), inset 0 1px 1px rgba(255,255,255,0.6);
+              padding:3px;
+              background:#FFFFFF;
+              box-shadow:0 8px 22px rgba(15,23,42,0.22), 0 0 0 1.5px ${isSelected ? meta.accentHex : 'rgba(255,255,255,0.9)'};
             ">
               <div style="
                 width:100%; height:100%; border-radius:9999px;
@@ -437,11 +428,6 @@ export const AMapCanvas = forwardRef<AMapCanvasHandle, AMapCanvasProps>(
                 <img src="${spot.coverUrl}" alt="${spot.name}"
                   style="width:100%;height:100%;object-fit:cover;"
                   onerror="this.style.display='none'" />
-                <div style="
-                  position:absolute; inset:0;
-                  background:linear-gradient(180deg, rgba(255,255,255,0.22) 0%, transparent 45%, rgba(0,0,0,0.2) 100%);
-                  pointer-events:none;
-                "></div>
               </div>
             </div>
           </div>
@@ -449,22 +435,22 @@ export const AMapCanvas = forwardRef<AMapCanvasHandle, AMapCanvasProps>(
             width:0; height:0; margin-top:-1px;
             border-left:5px solid transparent;
             border-right:5px solid transparent;
-            border-top:7px solid ${isSelected ? 'rgba(255,255,255,0.92)' : meta.accentHex};
-            filter:drop-shadow(0 3px 4px rgba(0,0,0,0.45));
+            border-top:7px solid ${isSelected ? meta.accentHex : '#FFFFFF'};
+            filter:drop-shadow(0 2px 3px rgba(15,23,42,0.22));
           "></div>
           ${
             isSelected
               ? `<div style="
                   margin-top:4px;
-                  padding:3px 10px;
+                  padding:4px 11px;
                   border-radius:9999px;
-                  background:rgba(15,23,42,0.78);
-                  backdrop-filter:blur(18px);
-                  -webkit-backdrop-filter:blur(18px);
-                  border:1px solid rgba(255,255,255,0.24);
-                  box-shadow:0 8px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.3);
-                  color:#FFFFFF;
-                  font-size:11px;
+                  background:rgba(255,255,255,0.92);
+                  backdrop-filter:blur(20px);
+                  -webkit-backdrop-filter:blur(20px);
+                  border:1px solid rgba(255,255,255,0.95);
+                  box-shadow:0 8px 22px rgba(15,23,42,0.16);
+                  color:#1D1D1F;
+                  font-size:11.5px;
                   font-weight:600;
                   white-space:nowrap;
                   letter-spacing:-0.01em;
@@ -498,7 +484,7 @@ export const AMapCanvas = forwardRef<AMapCanvasHandle, AMapCanvasProps>(
     return (
       <div
         ref={containerRef}
-        className="w-full h-full bg-[#06080f]"
+        className="w-full h-full bg-[#ECEFF4]"
         aria-label="广西外国语学院五合校区高德治愈地图"
       />
     );

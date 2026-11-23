@@ -19,17 +19,12 @@ interface MicroDroplet {
   emoji?: string;
 }
 
-const TONE_GLOW: Record<VentBubble['tone'], string> = {
-  mint: 'rgba(52, 211, 153, 0.24)',
-  amber: 'rgba(251, 191, 36, 0.24)',
-  lavender: 'rgba(167, 139, 250, 0.26)',
+const TONE_TINT: Record<VentBubble['tone'], string> = {
+  mint: 'rgba(52, 199, 89, 0.16)',
+  amber: 'rgba(255, 149, 0, 0.16)',
+  lavender: 'rgba(175, 82, 222, 0.15)',
 };
 
-/**
- * 真正的通透液态玻璃悬浮泡泡：
- * - 表面有高光折射弧与虹彩边缘，缓慢悬浮呼吸
- * - 不是干巴巴点一下就结束：支持「长按泡泡蓄力抱抱（膨胀+进度光环+满格绽放微泡）」与「点击触发同感水波纹」
- */
 export const ResonanceBubble: React.FC<ResonanceBubbleProps> = ({
   bubble,
   index,
@@ -56,12 +51,12 @@ export const ResonanceBubble: React.FC<ResonanceBubbleProps> = ({
   const spawnDroplets = (count: number, emoji?: string) => {
     const batch: MicroDroplet[] = Array.from({ length: count }).map((_, i) => {
       const angle = (i / count) * Math.PI * 2 + Math.random() * 0.4;
-      const dist = 48 + Math.random() * 44;
+      const dist = 48 + Math.random() * 42;
       return {
         id: `${Date.now()}-${i}-${Math.random()}`,
         x: Math.cos(angle) * dist,
-        y: Math.sin(angle) * dist - 18,
-        size: 7 + (i % 3) * 4,
+        y: Math.sin(angle) * dist - 16,
+        size: 8 + (i % 3) * 4,
         emoji: i % 3 === 0 ? emoji : undefined,
       };
     });
@@ -74,7 +69,6 @@ export const ResonanceBubble: React.FC<ResonanceBubbleProps> = ({
   };
 
   const startHoldHug = (e: React.PointerEvent) => {
-    // 忽略点击同感按钮时的冒泡
     if ((e.target as HTMLElement).closest('[data-empathy-btn="true"]')) return;
 
     setIsHolding(true);
@@ -115,15 +109,12 @@ export const ResonanceBubble: React.FC<ResonanceBubbleProps> = ({
       intervalRef.current = null;
     }
     if (!completedRef.current && isHolding) {
-      // 轻点了一下：给予 Q 弹反馈并温柔提示长按抱抱
       soundEngine.playPop(520);
-      setHintText('长按泡泡蓄满光环，送出温暖抱抱 🫂');
+      setHintText('长按泡泡蓄满暖光，送出温暖抱抱 🫂');
       window.setTimeout(() => setHintText(null), 1800);
     }
     setIsHolding(false);
-    if (!completedRef.current) {
-      setHoldProgress(0);
-    }
+    if (!completedRef.current) setHoldProgress(0);
   };
 
   const handleEmpathyClick = (e: React.MouseEvent) => {
@@ -138,9 +129,7 @@ export const ResonanceBubble: React.FC<ResonanceBubbleProps> = ({
   return (
     <motion.div
       layout
-      style={{
-        animationDelay: `${(index % 4) * 0.7}s`,
-      }}
+      style={{ animationDelay: `${(index % 4) * 0.75}s` }}
       className="animate-bubble-float relative"
     >
       <motion.div
@@ -149,25 +138,18 @@ export const ResonanceBubble: React.FC<ResonanceBubbleProps> = ({
         onPointerLeave={endHoldHug}
         onPointerCancel={endHoldHug}
         animate={{
-          scale: bursting ? 1.05 : isHolding ? 1 + holdProgress * 0.045 : 1,
+          scale: bursting ? 1.045 : isHolding ? 1 + holdProgress * 0.04 : 1,
         }}
         transition={{ type: 'spring', stiffness: 320, damping: 20 }}
-        className="soap-bubble rounded-[36px] p-5 sm:p-6 border border-white/20 cursor-pointer select-none touch-pan-y overflow-hidden"
-        style={{
-          boxShadow: isHolding
-            ? `inset 0 2px 4px rgba(255,255,255,0.45), 0 0 ${Math.round(
-                24 + holdProgress * 36
-              )}px ${TONE_GLOW[bubble.tone]}`
-            : undefined,
-        }}
+        className="soap-bubble rounded-[36px] p-5 sm:p-6 cursor-pointer select-none touch-pan-y overflow-hidden"
       >
-        {/* 长按蓄力暖光填充层 */}
+        {/* 长按蓄力虹彩暖光层 */}
         <div
           className="pointer-events-none absolute inset-0 transition-opacity duration-150"
           style={{
-            opacity: isHolding || bursting ? 0.9 : 0,
-            background: `radial-gradient(circle at 50% 50%, ${TONE_GLOW[bubble.tone]} 0%, transparent ${Math.round(
-              25 + holdProgress * 85
+            opacity: isHolding || bursting ? 1 : 0,
+            background: `radial-gradient(circle at 50% 50%, ${TONE_TINT[bubble.tone]} 0%, transparent ${Math.round(
+              28 + holdProgress * 82
             )}%)`,
           }}
         />
@@ -177,46 +159,43 @@ export const ResonanceBubble: React.FC<ResonanceBubbleProps> = ({
           {rippleKey > 0 && (
             <motion.span
               key={rippleKey}
-              initial={{ scale: 0.2, opacity: 0.55 }}
-              animate={{ scale: 2.4, opacity: 0 }}
+              initial={{ scale: 0.2, opacity: 0.5 }}
+              animate={{ scale: 2.3, opacity: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.7, ease: 'easeOut' }}
-              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full border border-white/40"
+              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full border-2 border-[#007AFF]/35"
             />
           )}
         </AnimatePresence>
 
-        {/* 泡泡顶部标签与时间 */}
         <div className="relative z-10 flex items-center justify-between gap-2 mb-2.5">
-          <span className="px-3 py-0.5 rounded-full bg-white/[0.1] border border-white/15 text-[11px] font-medium text-white/90">
+          <span className="px-3 py-0.5 rounded-full bg-white/90 border border-slate-200/70 text-[11px] font-semibold text-slate-700 shadow-sm">
             #{bubble.tag}
           </span>
-          <span className="text-[11px] text-white/45">
+          <span className="text-[11px] text-slate-400 font-medium">
             五合匿名泡泡 · {bubble.createdAt}
           </span>
         </div>
 
-        {/* 情绪文本 */}
-        <p className="relative z-10 text-[14px] text-white/90 leading-[1.65] tracking-tight">
+        <p className="relative z-10 text-[14.5px] text-[#1D1D1F] leading-[1.68] tracking-tight">
           {bubble.content}
         </p>
 
         {/* 蓄力进度细光条 */}
-        <div className="relative z-10 mt-3.5 h-[3px] w-full rounded-full bg-white/[0.08] overflow-hidden">
+        <div className="relative z-10 mt-3.5 h-[3.5px] w-full rounded-full bg-slate-200/70 overflow-hidden">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-amber-200 to-violet-300 transition-all duration-75"
+            className="h-full rounded-full bg-gradient-to-r from-[#007AFF] via-[#34C759] to-[#FF9500] transition-all duration-75"
             style={{ width: `${Math.round(holdProgress * 100)}%` }}
           />
         </div>
 
-        {/* 底部交互区：长按抱抱 + 点击同感（无评论区） */}
         <div className="relative z-10 mt-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <div
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                 isHolding || bubble.huggedByMe
-                  ? 'bg-white/20 text-white border-white/35 shadow-[0_0_16px_rgba(255,255,255,0.2)]'
-                  : 'bg-white/[0.07] text-white/80 border-white/12'
+                  ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-sm'
+                  : 'bg-white/90 text-slate-700 border-slate-200/80'
               }`}
             >
               <span>🫂</span>
@@ -227,7 +206,7 @@ export const ResonanceBubble: React.FC<ResonanceBubbleProps> = ({
                   ? '已送出抱抱'
                   : '长按泡泡抱抱'}
               </span>
-              <span className="font-mono text-[11px] text-white/75">
+              <span className="font-mono text-[11px] opacity-85">
                 {bubble.hugs}
               </span>
             </div>
@@ -237,13 +216,13 @@ export const ResonanceBubble: React.FC<ResonanceBubbleProps> = ({
               data-empathy-btn="true"
               whileTap={{ scale: 0.9 }}
               onClick={handleEmpathyClick}
-              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
                 bubble.empathizedByMe
-                  ? 'bg-amber-300/20 text-amber-100 border-amber-200/40'
-                  : 'bg-white/[0.07] text-white/75 border-white/12 hover:bg-white/[0.14]'
+                  ? 'bg-amber-50 text-[#FF9500] border-amber-200'
+                  : 'bg-white/90 text-slate-600 border-slate-200/80 hover:bg-white'
               }`}
             >
-              <Zap className="w-3.5 h-3.5 text-amber-300" />
+              <Zap className="w-3.5 h-3.5 text-[#FF9500]" />
               <span>同感</span>
               <span className="font-mono text-[11px] opacity-85">
                 {bubble.empathy}
@@ -251,17 +230,16 @@ export const ResonanceBubble: React.FC<ResonanceBubbleProps> = ({
             </motion.button>
           </div>
 
-          <Sparkles className="w-4 h-4 text-white/30 shrink-0 hidden sm:block" />
+          <Sparkles className="w-4 h-4 text-slate-300 shrink-0 hidden sm:block" />
         </div>
 
-        {/* 轻点引导气泡提示 */}
         <AnimatePresence>
           {hintText && (
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              className="relative z-10 mt-2 text-[11px] text-amber-200/90"
+              className="relative z-10 mt-2 text-[11.5px] font-medium text-[#007AFF]"
             >
               {hintText}
             </motion.div>
@@ -269,7 +247,7 @@ export const ResonanceBubble: React.FC<ResonanceBubbleProps> = ({
         </AnimatePresence>
       </motion.div>
 
-      {/* 绽放飘散的微液态泡泡粒子 */}
+      {/* 绽放飘散的虹彩微泡泡粒子 */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-visible z-20">
         <AnimatePresence>
           {droplets.map((d) => (
@@ -286,7 +264,7 @@ export const ResonanceBubble: React.FC<ResonanceBubbleProps> = ({
               ) : (
                 <span
                   style={{ width: d.size, height: d.size }}
-                  className="rounded-full bg-white/40 border border-white/70 shadow-[0_0_10px_rgba(255,255,255,0.65)]"
+                  className="rounded-full bg-white/90 border border-[#007AFF]/35 shadow-sm"
                 />
               )}
             </motion.span>

@@ -173,9 +173,13 @@ export const buddyService = {
     cipher: string;
     vibeNote: string;
     isSilent: boolean;
+    hostAlias?: string;
+    hostAvatar?: string;
   }): BuddyActivity {
-    const aliasPool = ['匿名发起人', '暂停一下同学', '限时同路人', '轻社交人类'];
-    const hostAlias = aliasPool[Math.floor(Math.random() * aliasPool.length)];
+    const aliasPool = ['五合发起人', '暂停一下同学', '限时同路人', '轻社交人类'];
+    const hostAlias =
+      input.hostAlias?.trim() ||
+      aliasPool[Math.floor(Math.random() * aliasPool.length)];
     const created: BuddyActivity = {
       id: `buddy-ugc-${Date.now()}`,
       title: input.title.trim(),
@@ -187,6 +191,7 @@ export const buddyService = {
       joinedCount: 1,
       joinedByMe: true,
       hostAlias,
+      hostAvatar: input.hostAvatar,
       cipher: input.cipher.trim() || '挥挥手机亮屏示意',
       vibeNote:
         input.vibeNote.trim() || '主打轻松无压，30分钟一起充个电，到点自由散场。',

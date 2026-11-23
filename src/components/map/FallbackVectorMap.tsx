@@ -7,7 +7,7 @@ import { CAMPUS_CENTER } from '../../utils/geo';
 interface FallbackVectorMapProps {
   spots: HealingSpot[];
   selectedSpotId: string | null;
-  mapStyle: 'dark' | 'satellite';
+  mapStyle: 'light' | 'satellite';
   isPickMode: boolean;
   focusTarget: { lng: number; lat: number; seq: number } | null;
   zoomTrigger: { delta: number; seq: number } | null;
@@ -169,8 +169,8 @@ export const FallbackVectorMap: React.FC<FallbackVectorMapProps> = ({
       }`}
       style={{
         background: isSat
-          ? 'radial-gradient(circle at 50% 45%, #162624 0%, #0d161b 55%, #06080f 100%)'
-          : 'radial-gradient(circle at 50% 40%, #10192b 0%, #090d17 68%, #05070c 100%)',
+          ? 'radial-gradient(circle at 50% 45%, #1d352d 0%, #142228 60%, #0c131a 100%)'
+          : '#ECEFF4',
       }}
     >
       <div
@@ -190,64 +190,23 @@ export const FallbackVectorMap: React.FC<FallbackVectorMapProps> = ({
           viewBox={`0 0 ${WORLD_W} ${WORLD_H}`}
           className="w-full h-full pointer-events-none"
         >
-          <defs>
-            <pattern
-              id="gxufl-grid"
-              width="48"
-              height="48"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 48 0 L 0 0 0 48"
-                fill="none"
-                stroke={isSat ? 'rgba(52,211,153,0.07)' : 'rgba(255,255,255,0.045)'}
-                strokeWidth="1"
-              />
-            </pattern>
-            <radialGradient id="gxufl-lake" cx="50%" cy="50%" r="55%">
-              <stop offset="0%" stopColor={isSat ? '#0d5c63' : '#123859'} />
-              <stop offset="100%" stopColor={isSat ? '#082c36' : '#091f35'} />
-            </radialGradient>
-            <linearGradient id="gxufl-lawn" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor={isSat ? '#14532d' : '#0e2924'} />
-              <stop offset="100%" stopColor={isSat ? '#064e3b' : '#091b1a'} />
-            </linearGradient>
-            <linearGradient id="gxufl-bldg" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={isSat ? '#263547' : '#1b2436'} />
-              <stop offset="100%" stopColor={isSat ? '#1a2533' : '#111827'} />
-            </linearGradient>
-          </defs>
-
-          <rect width={WORLD_W} height={WORLD_H} fill="url(#gxufl-grid)" />
-
-          {/* 天鹅湖草坪绿地 */}
           <path
             d="M 420 630 Q 560 560 720 640 T 820 840 Q 640 900 470 830 Z"
-            fill="url(#gxufl-lawn)"
-            stroke="rgba(52,211,153,0.22)"
-            strokeWidth="1.5"
+            fill={isSat ? '#1f4e37' : '#D5F0D8'}
           />
-
-          {/* 化龙池 / 天鹅湖 */}
           <path
             d="M 790 500 C 860 450, 960 480, 975 550 C 990 620, 890 650, 820 620 C 760 595, 750 540, 790 500 Z"
-            fill="url(#gxufl-lake)"
-            stroke="rgba(56,189,248,0.32)"
-            strokeWidth="2"
+            fill={isSat ? '#1a5670' : '#BFE2FF'}
           />
-
-          {/* 五合大道与校内道路 */}
           <g
             fill="none"
-            stroke="rgba(255,255,255,0.12)"
+            stroke={isSat ? 'rgba(255,255,255,0.22)' : '#FFFFFF'}
             strokeLinecap="round"
           >
-            <path d="M 160 1050 Q 800 1030 1460 1060" strokeWidth="22" />
-            <path d="M 790 180 Q 785 600 795 1050" strokeWidth="16" />
-            <path d="M 380 580 Q 800 560 1240 590" strokeWidth="13" />
+            <path d="M 160 1050 Q 800 1030 1460 1060" strokeWidth="24" />
+            <path d="M 790 180 Q 785 600 795 1050" strokeWidth="18" />
+            <path d="M 380 580 Q 800 560 1240 590" strokeWidth="14" />
           </g>
-
-          {/* 田径场 */}
           <g transform="translate(970, 325)">
             <rect
               x="0"
@@ -255,9 +214,7 @@ export const FallbackVectorMap: React.FC<FallbackVectorMapProps> = ({
               width="168"
               height="94"
               rx="47"
-              fill="#261826"
-              stroke="rgba(251,191,36,0.32)"
-              strokeWidth="2"
+              fill={isSat ? '#6e3439' : '#F6C6BD'}
             />
             <rect
               x="18"
@@ -265,16 +222,12 @@ export const FallbackVectorMap: React.FC<FallbackVectorMapProps> = ({
               width="132"
               height="62"
               rx="31"
-              fill="#102a24"
-              stroke="rgba(52,211,153,0.25)"
-              strokeWidth="1.5"
+              fill={isSat ? '#1f4e37' : '#CBEBC6'}
             />
           </g>
-
-          {/* 广西外国语学院五合校区地标轮廓 */}
           <g
-            fill="url(#gxufl-bldg)"
-            stroke="rgba(255,255,255,0.16)"
+            fill={isSat ? '#2b394a' : '#DFE5EE'}
+            stroke={isSat ? 'rgba(255,255,255,0.16)' : '#CFD7E3'}
             strokeWidth="1.5"
           >
             <rect x="595" y="520" width="142" height="92" rx="12" />
@@ -282,27 +235,22 @@ export const FallbackVectorMap: React.FC<FallbackVectorMapProps> = ({
             <rect x="935" y="640" width="136" height="86" rx="12" />
             <rect x="735" y="965" width="110" height="54" rx="10" />
           </g>
-
           <g
-            fill="rgba(226,232,240,0.52)"
+            fill={isSat ? 'rgba(255,255,255,0.72)' : '#64748B'}
             fontSize="13"
-            fontWeight="500"
+            fontWeight="600"
             textAnchor="middle"
           >
             <text x="666" y="570">明德楼</text>
             <text x="845" y="396">五合图书馆</text>
-            <text x="880" y="558" fill="rgba(125,211,252,0.72)">化龙池</text>
+            <text x="880" y="558">化龙池</text>
             <text x="1054" y="376">田径场</text>
             <text x="1003" y="688">致达楼</text>
-            <text x="600" y="750" fill="rgba(110,231,183,0.7)">天鹅湖草坪</text>
+            <text x="600" y="750">天鹅湖草坪</text>
             <text x="790" y="996">五合南门钟楼</text>
-            <text x="800" y="1045" fontSize="11" fill="rgba(255,255,255,0.42)">
-              五合大道 · 广西外国语学院
-            </text>
           </g>
         </svg>
 
-        {/* 苹果液态玻璃风格点位 */}
         {spots.map((spot) => {
           const { x, y } = coordsToWorld(spot.lng, spot.lat);
           const meta = getCategoryMeta(spot.category);
@@ -322,30 +270,31 @@ export const FallbackVectorMap: React.FC<FallbackVectorMapProps> = ({
                 top: y,
                 zIndex: isSelected ? 35 : 15,
               }}
-              className="absolute -translate-x-1/2 -translate-y-full group focus:outline-none"
+              className="absolute -translate-x-1/2 -translate-y-full focus:outline-none"
             >
               <motion.div
-                animate={{ scale: isSelected ? 1.18 : 1 }}
+                animate={{ scale: isSelected ? 1.15 : 1 }}
                 transition={{ type: 'spring', stiffness: 380, damping: 26 }}
                 className="relative flex flex-col items-center"
               >
                 <div className="relative">
                   <span
-                    className="marker-ring-breathe absolute -inset-2 rounded-full pointer-events-none"
+                    className="marker-ring-breathe absolute -inset-1.5 rounded-full pointer-events-none"
                     style={{
                       backgroundColor: `${meta.accentHex}28`,
-                      border: `1px solid ${meta.accentHex}99`,
-                      boxShadow: `0 0 20px ${meta.accentHex}70`,
+                      border: `1.5px solid ${meta.accentHex}88`,
                     }}
                   />
                   <div
-                    className="relative w-11 h-11 rounded-full p-[2.5px] shadow-glass"
+                    className="relative w-11 h-11 rounded-full p-[3px] bg-white shadow-lg"
                     style={{
-                      background: `linear-gradient(155deg, rgba(255,255,255,0.7), ${meta.accentHex}aa 50%, rgba(255,255,255,0.2))`,
+                      boxShadow: isSelected
+                        ? `0 8px 22px rgba(15,23,42,0.22), 0 0 0 2px ${meta.accentHex}`
+                        : '0 6px 16px rgba(15,23,42,0.18)',
                     }}
                   >
                     <div
-                      className="w-full h-full rounded-full overflow-hidden flex items-center justify-center"
+                      className="w-full h-full rounded-full overflow-hidden"
                       style={{ background: spot.fallbackGradient }}
                     >
                       <img
@@ -362,11 +311,11 @@ export const FallbackVectorMap: React.FC<FallbackVectorMapProps> = ({
                 <div
                   className="w-0 h-0 -mt-[1px] border-l-[5px] border-r-[5px] border-t-[7px] border-l-transparent border-r-transparent"
                   style={{
-                    borderTopColor: isSelected ? '#FFFFFF' : meta.accentHex,
+                    borderTopColor: isSelected ? meta.accentHex : '#FFFFFF',
                   }}
                 />
                 {isSelected && (
-                  <div className="mt-1 px-2.5 py-0.5 rounded-full liquid-glass-elevated text-[11px] font-semibold text-white whitespace-nowrap">
+                  <div className="mt-1 px-2.5 py-0.5 rounded-full bg-white/95 shadow-md text-[11px] font-semibold text-[#1D1D1F] whitespace-nowrap">
                     {meta.emoji} {spot.name}
                   </div>
                 )}

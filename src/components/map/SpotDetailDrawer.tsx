@@ -53,68 +53,71 @@ export const SpotDetailDrawer: React.FC<SpotDetailDrawerProps> = ({
   return (
     <AnimatePresence>
       {spot && (
-        <>
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:p-4 sm:items-center">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md"
+            className="fixed inset-0 bg-slate-900/35 backdrop-blur-md"
           />
 
           <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 340, damping: 34 }}
-            className="fixed inset-x-0 bottom-0 z-50 max-w-2xl mx-auto max-h-[88vh] flex flex-col rounded-t-[34px] liquid-glass-elevated overflow-hidden"
+            initial={{ y: '100%', opacity: 0.9 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: '100%', opacity: 0.9 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 34 }}
+            className="relative z-10 w-full sm:max-w-xl max-h-[88dvh] flex flex-col rounded-t-[32px] sm:rounded-[32px] bg-[#F2F2F7] border border-white shadow-[0_24px_64px_rgba(15,23,42,0.22)] overflow-hidden"
           >
-            <div className="flex justify-center pt-3 pb-1.5 shrink-0">
-              <div className="w-10 h-1 rounded-full bg-white/25" />
+            <div className="flex justify-center pt-2.5 pb-1 shrink-0 bg-white/80">
+              <div className="w-10 h-1 rounded-full bg-slate-300" />
             </div>
 
-            <div className="overflow-y-auto custom-scrollbar flex-1 pb-8">
-              <div className="relative h-56 sm:h-64 mx-4 mt-1 rounded-[24px] overflow-hidden border border-white/15">
-                <SafeImage
-                  src={spot.coverUrl}
-                  alt={spot.name}
-                  fallbackGradient={spot.fallbackGradient}
-                  emoji={getCategoryMeta(spot.category).emoji}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/25" />
+            <div className="overflow-y-auto custom-scrollbar flex-1 min-h-0 pb-6">
+              <div className="bg-white/80 px-4 pb-4">
+                <div className="relative h-52 sm:h-60 rounded-[24px] overflow-hidden shadow-sm">
+                  <SafeImage
+                    src={spot.coverUrl}
+                    alt={spot.name}
+                    fallbackGradient={spot.fallbackGradient}
+                    emoji={getCategoryMeta(spot.category).emoji}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/15" />
 
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label="关闭详情"
-                  className="absolute top-3 right-3 w-9 h-9 rounded-full liquid-dock flex items-center justify-center text-white"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    aria-label="关闭详情"
+                    className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/85 backdrop-blur-md flex items-center justify-center text-[#1D1D1F] shadow-sm"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
 
-                <div className="absolute bottom-3.5 left-4 right-4 flex items-end justify-between gap-2">
-                  <div>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] bg-black/50 backdrop-blur-md text-white/95 border border-white/15 mb-1.5">
-                      {getCategoryMeta(spot.category).emoji}{' '}
-                      {getCategoryMeta(spot.category).label}
-                    </span>
-                    <h2 className="text-lg sm:text-xl font-bold text-white leading-tight tracking-tight">
-                      {spot.name}
-                    </h2>
-                  </div>
-                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-amber-300 text-xs font-semibold shrink-0">
-                    <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
-                    {spot.rating.toFixed(1)}
+                  <div className="absolute bottom-3.5 left-4 right-4 flex items-end justify-between gap-2">
+                    <div>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/90 text-[#1D1D1F] mb-1.5 shadow-sm">
+                        {getCategoryMeta(spot.category).emoji}{' '}
+                        {getCategoryMeta(spot.category).label}
+                      </span>
+                      <h2 className="text-lg sm:text-xl font-bold text-white leading-tight tracking-tight drop-shadow">
+                        {spot.name}
+                      </h2>
+                    </div>
+                    <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/90 text-[#FF9500] text-xs font-bold shrink-0 shadow-sm">
+                      <Star className="w-3.5 h-3.5 fill-[#FF9500] text-[#FF9500]" />
+                      {spot.rating.toFixed(1)}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="px-4 sm:px-5 mt-4 space-y-5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 text-xs text-white/65">
-                    <MapPin className="w-3.5 h-3.5 text-emerald-300" />
-                    <span>
+              <div className="px-4 mt-4 space-y-4">
+                {/* 坐标与快捷操作 */}
+                <div className="bg-white rounded-[22px] p-3.5 shadow-sm flex flex-wrap items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                    <MapPin className="w-3.5 h-3.5 text-[#007AFF]" />
+                    <span className="font-medium">
                       距校区中心{' '}
                       {formatDistance(
                         calculateDistanceMeters(
@@ -125,8 +128,8 @@ export const SpotDetailDrawer: React.FC<SpotDetailDrawerProps> = ({
                         )
                       )}
                     </span>
-                    <span className="text-white/25">·</span>
-                    <span className="font-mono text-[11px] text-white/45">
+                    <span className="text-slate-300">·</span>
+                    <span className="font-mono text-[11px] text-slate-400">
                       {formatCoord(spot.lng)}, {formatCoord(spot.lat)}
                     </span>
                   </div>
@@ -135,15 +138,15 @@ export const SpotDetailDrawer: React.FC<SpotDetailDrawerProps> = ({
                     <button
                       type="button"
                       onClick={() => onToggleLike(spot.id)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
                         spot.likedByMe
-                          ? 'bg-rose-400/20 text-rose-200 border-rose-300/40'
-                          : 'bg-white/[0.07] text-white/80 border-white/12 hover:bg-white/[0.12]'
+                          ? 'bg-rose-50 text-[#FF3B30] border-rose-200'
+                          : 'bg-[#F2F2F7] text-slate-600 border-transparent hover:bg-slate-200/70'
                       }`}
                     >
                       <Heart
                         className={`w-3.5 h-3.5 ${
-                          spot.likedByMe ? 'fill-rose-400 text-rose-400' : ''
+                          spot.likedByMe ? 'fill-[#FF3B30] text-[#FF3B30]' : ''
                         }`}
                       />
                       {spot.likes}
@@ -151,7 +154,7 @@ export const SpotDetailDrawer: React.FC<SpotDetailDrawerProps> = ({
                     <button
                       type="button"
                       onClick={() => onNavigateHint(spot)}
-                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-white text-slate-950 hover:bg-white/90 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-[#007AFF] text-white hover:bg-[#0066D6] transition-colors"
                     >
                       <Navigation className="w-3.5 h-3.5" />
                       出发去这里
@@ -159,15 +162,16 @@ export const SpotDetailDrawer: React.FC<SpotDetailDrawerProps> = ({
                   </div>
                 </div>
 
-                <div className="rounded-[22px] bg-white/[0.06] border border-white/12 p-4">
-                  <p className="text-sm text-white/90 leading-relaxed">
+                {/* 安利理由 */}
+                <div className="bg-white rounded-[22px] p-4 shadow-sm">
+                  <p className="text-sm text-[#1D1D1F] leading-relaxed">
                     “{spot.recommendation}”
                   </p>
                   <div className="mt-2.5 flex flex-wrap gap-1.5">
                     {spot.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-2.5 py-0.5 rounded-full text-[11px] bg-white/[0.07] text-white/70 border border-white/10"
+                        className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#F2F2F7] text-slate-600"
                       >
                         #{tag}
                       </span>
@@ -175,13 +179,14 @@ export const SpotDetailDrawer: React.FC<SpotDetailDrawerProps> = ({
                   </div>
                 </div>
 
-                <div className="rounded-[22px] bg-white/[0.06] border border-white/12 p-4">
+                {/* 一键更新此刻安静度 */}
+                <div className="bg-white rounded-[22px] p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-white/85">
-                      <Volume2 className="w-4 h-4 text-emerald-300" />
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-[#1D1D1F]">
+                      <Volume2 className="w-4 h-4 text-[#34C759]" />
                       一键更新此刻安静度
                     </div>
-                    <span className="text-[11px] text-white/45">
+                    <span className="text-[11px] text-slate-400">
                       {spot.quietUpdatedAt}
                     </span>
                   </div>
@@ -200,10 +205,10 @@ export const SpotDetailDrawer: React.FC<SpotDetailDrawerProps> = ({
                           key={opt.id}
                           type="button"
                           onClick={() => onUpdateQuietStatus(spot.id, opt.id)}
-                          className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-2xl text-xs font-medium border transition-all ${
+                          className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-2xl text-xs font-semibold border transition-all ${
                             active
-                              ? 'bg-white text-slate-950 border-white font-semibold'
-                              : 'bg-white/[0.05] text-white/70 border-white/10 hover:bg-white/[0.1]'
+                              ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-sm'
+                              : 'bg-[#F2F2F7] text-slate-600 border-transparent hover:bg-slate-200/70'
                           }`}
                         >
                           {active ? (
@@ -220,31 +225,29 @@ export const SpotDetailDrawer: React.FC<SpotDetailDrawerProps> = ({
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-white flex items-center gap-1.5">
-                      <MessageCircleHeart className="w-4 h-4 text-violet-300" />
-                      同学匿名打卡 ({spot.reviews.length})
+                {/* 同学打卡评价 */}
+                <div className="bg-white rounded-[22px] p-4 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-[#1D1D1F] flex items-center gap-1.5">
+                      <MessageCircleHeart className="w-4 h-4 text-[#AF52DE]" />
+                      同学打卡 ({spot.reviews.length})
                     </h3>
-                    <span className="text-[11px] text-white/45">
-                      全程匿名 · 温柔足迹
+                    <span className="text-[11px] text-slate-400">
+                      分享此刻感受
                     </span>
                   </div>
 
-                  <form
-                    onSubmit={handleSubmitReview}
-                    className="rounded-[22px] bg-white/[0.05] border border-white/12 p-3.5 mb-3 space-y-2.5"
-                  >
+                  <form onSubmit={handleSubmitReview} className="space-y-2.5">
                     <div className="flex flex-wrap gap-1.5">
                       {MOOD_TAGS.map((tag) => (
                         <button
                           key={tag}
                           type="button"
                           onClick={() => setSelectedMood(tag)}
-                          className={`px-2.5 py-0.5 rounded-full text-[11px] border transition-colors ${
+                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-colors ${
                             selectedMood === tag
-                              ? 'bg-white text-slate-950 border-white font-medium'
-                              : 'bg-white/[0.06] text-white/65 border-white/10'
+                              ? 'bg-[#007AFF] text-white'
+                              : 'bg-[#F2F2F7] text-slate-600'
                           }`}
                         >
                           {tag}
@@ -257,36 +260,36 @@ export const SpotDetailDrawer: React.FC<SpotDetailDrawerProps> = ({
                         value={reviewText}
                         onChange={(e) => setReviewText(e.target.value)}
                         placeholder="留下一句此刻的感受，给下一个路过的同学…"
-                        className="flex-1 bg-black/35 border border-white/12 rounded-full px-4 py-2 text-xs text-white placeholder:text-white/35 focus:outline-none focus:border-white/35"
+                        className="flex-1 bg-[#F2F2F7] rounded-full px-4 py-2 text-xs text-[#1D1D1F] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30"
                       />
                       <button
                         type="submit"
                         disabled={!reviewText.trim()}
-                        className="w-9 h-9 rounded-full bg-white text-slate-950 flex items-center justify-center disabled:opacity-35 shrink-0"
+                        className="w-9 h-9 rounded-full bg-[#007AFF] text-white flex items-center justify-center disabled:opacity-35 shrink-0"
                       >
                         <Send className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </form>
 
-                  <div className="space-y-2.5">
+                  <div className="space-y-2.5 pt-1">
                     {spot.reviews.map((rev) => (
                       <div
                         key={rev.id}
-                        className="rounded-[20px] bg-white/[0.05] border border-white/[0.08] p-3.5"
+                        className="rounded-2xl bg-[#F2F2F7]/80 p-3"
                       >
                         <div className="flex items-center justify-between gap-2 text-[11px] mb-1">
-                          <span className="font-medium text-white/80">
+                          <span className="font-semibold text-[#1D1D1F]">
                             {rev.author}
                           </span>
                           <div className="flex items-center gap-1.5">
-                            <span className="px-2 py-0.5 rounded-full bg-white/10 text-white/80 text-[10px]">
+                            <span className="px-2 py-0.5 rounded-full bg-white text-slate-600 text-[10px] font-medium">
                               {rev.moodTag}
                             </span>
-                            <span className="text-white/40">{rev.createdAt}</span>
+                            <span className="text-slate-400">{rev.createdAt}</span>
                           </div>
                         </div>
-                        <p className="text-xs text-white/80 leading-relaxed">
+                        <p className="text-xs text-slate-600 leading-relaxed">
                           {rev.content}
                         </p>
                       </div>
@@ -296,7 +299,7 @@ export const SpotDetailDrawer: React.FC<SpotDetailDrawerProps> = ({
               </div>
             </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );

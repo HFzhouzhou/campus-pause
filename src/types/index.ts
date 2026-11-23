@@ -9,9 +9,31 @@ export type SpotCategory =
 
 export type QuietStatus = 'very_quiet' | 'moderate' | 'crowded';
 
+export interface UserProfile {
+  uid: string;
+  email?: string;
+  nickname: string;
+  avatarUrl: string;
+  authProvider: 'email' | 'wechat_miniprogram';
+  /** 预留：后续微信小程序 wx.login 换取的 openid */
+  wxOpenId?: string;
+  /** 预留：微信开放平台 unionid，用于打通 Web 与小程序同一账号 */
+  wxUnionId?: string;
+  schoolName: string;
+  createdAt: string;
+}
+
+/** 预留：微信小程序头像昵称授权回调数据结构 (<button open-type="chooseAvatar"> + <input type="nickname">) */
+export interface WeChatProfilePayload {
+  nickName?: string;
+  avatarUrl?: string;
+  wxCode?: string;
+}
+
 export interface SpotReview {
   id: string;
   author: string;
+  authorAvatar?: string;
   content: string;
   createdAt: string;
   moodTag: string;
@@ -86,7 +108,8 @@ export interface BuddyActivity {
   joinedCount: number;
   joinedByMe?: boolean;
   hostAlias: string;
-  cipher: string; // e.g., "穿黑色卫衣拿冰美式"
+  hostAvatar?: string;
+  cipher: string;
   vibeNote: string;
   boundaryTag: string;
   isSilent: boolean;

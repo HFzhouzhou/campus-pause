@@ -30,10 +30,9 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({
         aria-label="主导航"
         className="pointer-events-auto relative liquid-dock rounded-[30px] p-1.5 flex items-center gap-1 max-w-[392px] w-full"
       >
-        {/* 顶部液态玻璃折射高光丝带 */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute top-[1px] inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-white/55 to-transparent"
+          className="pointer-events-none absolute top-[1px] inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-white to-transparent"
         />
 
         {NAV_ITEMS.map((item) => {
@@ -43,7 +42,7 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({
             <motion.button
               key={item.id}
               type="button"
-              whileTap={{ scale: 0.93 }}
+              whileTap={{ scale: 0.92 }}
               onClick={() => {
                 if (activeTab !== item.id) {
                   triggerHaptic(10);
@@ -51,15 +50,17 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({
                 }
               }}
               className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 px-1.5 rounded-[24px] transition-colors duration-200 ${
-                isActive ? 'text-white' : 'text-white/55 hover:text-white/85'
+                isActive
+                  ? 'text-[#007AFF]'
+                  : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               {isActive && (
                 <motion.span
-                  layoutId="apple-liquid-glass-lens"
+                  layoutId="ios-liquid-glass-lens"
                   transition={{
                     type: 'spring',
-                    stiffness: 410,
+                    stiffness: 420,
                     damping: 30,
                     mass: 0.85,
                   }}
@@ -67,13 +68,13 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({
                 />
               )}
               <Icon
-                className={`relative z-10 w-[19px] h-[19px] stroke-[1.9] transition-transform duration-200 ${
-                  isActive ? 'scale-105 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]' : ''
+                className={`relative z-10 w-[19px] h-[19px] stroke-[2] transition-transform duration-200 ${
+                  isActive ? 'scale-105' : ''
                 }`}
               />
               <span
-                className={`relative z-10 text-[10px] tracking-tight whitespace-nowrap ${
-                  isActive ? 'font-semibold text-white' : 'font-medium'
+                className={`relative z-10 text-[10.5px] tracking-tight whitespace-nowrap ${
+                  isActive ? 'font-semibold' : 'font-medium'
                 }`}
               >
                 {item.label}

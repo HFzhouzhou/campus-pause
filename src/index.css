@@ -10,8 +10,8 @@
     width: 100%;
     margin: 0;
     padding: 0;
-    background-color: #06080f;
-    color: #f8fafc;
+    background-color: #f2f2f7;
+    color: #1d1d1f;
     overflow: hidden;
     overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
@@ -19,10 +19,10 @@
       'PingFang SC', 'Hiragino Sans GB', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 }
 
-/* Scrollbar utilities */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -32,150 +32,144 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(60, 60, 67, 0.18);
   border-radius: 9999px;
 }
 
 /* ============================================================================
-   Apple iOS 26 / visionOS Liquid Glass Design System (液态玻璃光学材质)
+   Apple iOS 26 Light Mode + Liquid Glass Design System (苹果浅色液态玻璃)
    ============================================================================ */
+
+/* 明净温和的 iOS 分组页面背景 */
+.ios-canvas {
+  background:
+    radial-gradient(62% 48% at 12% 0%, rgba(56, 189, 248, 0.14) 0%, transparent 65%),
+    radial-gradient(58% 45% at 92% 10%, rgba(167, 139, 250, 0.13) 0%, transparent 64%),
+    radial-gradient(50% 42% at 50% 96%, rgba(52, 211, 153, 0.11) 0%, transparent 68%),
+    #f2f2f7;
+}
+
+/* 标准 iOS 卡片（纯白通透 + 细腻发丝边框 + 多层柔光阴影） */
+.ios-card {
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(24px) saturate(185%);
+  -webkit-backdrop-filter: blur(24px) saturate(185%);
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 12px 32px -10px rgba(15, 23, 42, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+/* 地图悬浮 HUD / 液态玻璃材质（在地图与亮色页面上都极度通透高级） */
 .liquid-glass {
   background: linear-gradient(
     145deg,
-    rgba(255, 255, 255, 0.11) 0%,
-    rgba(255, 255, 255, 0.045) 48%,
-    rgba(255, 255, 255, 0.075) 100%
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 255, 255, 0.66) 55%,
+    rgba(255, 255, 255, 0.78) 100%
   );
-  backdrop-filter: blur(28px) saturate(185%);
-  -webkit-backdrop-filter: blur(28px) saturate(185%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.86);
   box-shadow:
-    inset 0 1px 0.5px rgba(255, 255, 255, 0.28),
-    inset 0 -1px 1px rgba(255, 255, 255, 0.06),
-    0 16px 38px -12px rgba(0, 0, 0, 0.58);
+    inset 0 1px 0.5px rgba(255, 255, 255, 1),
+    inset 0 -1px 1px rgba(15, 23, 42, 0.04),
+    0 10px 28px -8px rgba(15, 23, 42, 0.12),
+    0 2px 6px rgba(15, 23, 42, 0.05);
 }
 
 .liquid-glass-elevated {
   background: linear-gradient(
     160deg,
-    rgba(30, 38, 56, 0.72) 0%,
-    rgba(14, 18, 30, 0.82) 100%
+    rgba(255, 255, 255, 0.94) 0%,
+    rgba(248, 250, 252, 0.9) 100%
   );
-  backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(38px) saturate(210%);
+  -webkit-backdrop-filter: blur(38px) saturate(210%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
   box-shadow:
-    inset 0 1px 0.5px rgba(255, 255, 255, 0.3),
-    inset 0 -1px 1px rgba(255, 255, 255, 0.06),
-    0 24px 60px -14px rgba(0, 0, 0, 0.72);
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 24px 60px -12px rgba(15, 23, 42, 0.18),
+    0 4px 16px rgba(15, 23, 42, 0.06);
 }
 
-/* 底部悬浮液态玻璃胶囊导航栏 */
+/* 苹果 iOS 26 底部液态玻璃悬浮胶囊 */
 .liquid-dock {
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.15) 0%,
-    rgba(255, 255, 255, 0.07) 52%,
-    rgba(255, 255, 255, 0.1) 100%
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 255, 255, 0.66) 55%,
+    rgba(255, 255, 255, 0.76) 100%
   );
-  backdrop-filter: blur(36px) saturate(210%);
-  -webkit-backdrop-filter: blur(36px) saturate(210%);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(40px) saturate(220%);
+  -webkit-backdrop-filter: blur(40px) saturate(220%);
+  border: 1px solid rgba(255, 255, 255, 0.92);
   box-shadow:
-    inset 0 1.5px 1px rgba(255, 255, 255, 0.42),
-    inset 0 -1.5px 2px rgba(255, 255, 255, 0.08),
-    0 20px 44px -8px rgba(0, 0, 0, 0.65),
-    0 4px 14px rgba(0, 0, 0, 0.35);
+    inset 0 1.5px 1px rgba(255, 255, 255, 1),
+    inset 0 -1px 2px rgba(15, 23, 42, 0.05),
+    0 18px 42px -10px rgba(15, 23, 42, 0.18),
+    0 4px 14px rgba(15, 23, 42, 0.08);
 }
 
-/* 液态玻璃选中态折射透镜 */
+/* 液态玻璃激活态透镜 */
 .liquid-lens {
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.28) 0%,
-    rgba(255, 255, 255, 0.12) 60%,
-    rgba(255, 255, 255, 0.18) 100%
+    rgba(0, 122, 255, 0.14) 0%,
+    rgba(0, 122, 255, 0.08) 100%
   );
-  border: 1px solid rgba(255, 255, 255, 0.34);
+  border: 1px solid rgba(0, 122, 255, 0.18);
   box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.55),
-    inset 0 -1px 1px rgba(255, 255, 255, 0.12),
-    0 4px 16px rgba(0, 0, 0, 0.22);
-}
-
-/* 兼容旧 class 名，平滑升级为苹果液态玻璃 */
-.hud-glass {
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.11) 0%,
-    rgba(18, 24, 38, 0.62) 100%
-  );
-  backdrop-filter: blur(28px) saturate(185%);
-  -webkit-backdrop-filter: blur(28px) saturate(185%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow:
-    inset 0 1px 0.5px rgba(255, 255, 255, 0.26),
-    0 12px 32px -10px rgba(0, 0, 0, 0.52);
-}
-
-.hud-glass-strong {
-  background: linear-gradient(
-    155deg,
-    rgba(28, 36, 54, 0.72) 0%,
-    rgba(11, 15, 25, 0.84) 100%
-  );
-  backdrop-filter: blur(36px) saturate(195%);
-  -webkit-backdrop-filter: blur(36px) saturate(195%);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow:
-    inset 0 1px 0.5px rgba(255, 255, 255, 0.28),
-    0 20px 44px -10px rgba(0, 0, 0, 0.68);
+    inset 0 1px 1px rgba(255, 255, 255, 0.8),
+    0 4px 12px rgba(0, 122, 255, 0.1);
 }
 
 /* ============================================================================
-   Iridescent Floating Soap Bubble (通透虹彩液态泡泡)
+   Luminous Pastel Iridescent Soap Bubble (清透虹彩悬浮肥皂泡)
    ============================================================================ */
 .soap-bubble {
   position: relative;
   background:
     radial-gradient(
-      120% 100% at 22% 18%,
-      rgba(255, 255, 255, 0.24) 0%,
-      rgba(255, 255, 255, 0.05) 36%,
-      rgba(255, 255, 255, 0.02) 68%,
-      rgba(255, 255, 255, 0.14) 100%
+      115% 95% at 18% 12%,
+      rgba(255, 255, 255, 0.96) 0%,
+      rgba(255, 255, 255, 0.72) 42%,
+      rgba(240, 249, 255, 0.62) 74%,
+      rgba(245, 243, 255, 0.76) 100%
     );
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(26px) saturate(190%);
+  -webkit-backdrop-filter: blur(26px) saturate(190%);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
   box-shadow:
-    inset 0 2px 3px rgba(255, 255, 255, 0.38),
-    inset 0 -10px 22px rgba(255, 255, 255, 0.06),
-    inset 8px 0 18px rgba(167, 139, 250, 0.14),
-    inset -8px 0 18px rgba(52, 211, 153, 0.14),
-    0 18px 40px -14px rgba(0, 0, 0, 0.62);
+    inset 0 3px 6px rgba(255, 255, 255, 1),
+    inset 0 -12px 24px rgba(167, 139, 250, 0.12),
+    inset 10px 0 22px rgba(56, 189, 248, 0.12),
+    inset -10px 0 22px rgba(52, 211, 153, 0.12),
+    0 16px 36px -14px rgba(15, 23, 42, 0.12);
 }
 
 .soap-bubble::before {
   content: '';
   position: absolute;
-  top: 9%;
-  left: 14%;
-  width: 34%;
-  height: 16%;
+  top: 8%;
+  left: 10%;
+  width: 30%;
+  height: 14%;
   border-radius: 9999px;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0.95) 0%,
     rgba(255, 255, 255, 0) 100%
   );
-  transform: rotate(-16deg);
+  transform: rotate(-14deg);
   pointer-events: none;
 }
 
@@ -185,15 +179,14 @@
     transform: translateY(0px);
   }
   50% {
-    transform: translateY(-7px);
+    transform: translateY(-6px);
   }
 }
 
 .animate-bubble-float {
-  animation: bubble-float 4.8s ease-in-out infinite;
+  animation: bubble-float 5.2s ease-in-out infinite;
 }
 
-/* Apple-style refined breathing pulse ring for map pins */
 @keyframes marker-breathe {
   0%,
   100% {
@@ -210,16 +203,9 @@
   animation: marker-breathe 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-/* Hide AMap default clunky logo/copyright clutter slightly while staying respectful */
 .amap-marker-label {
   border: none !important;
   background: transparent !important;
-}
-.amap-scale-text {
-  color: rgba(248, 250, 252, 0.72) !important;
-}
-.amap-scale-line div {
-  border-color: rgba(248, 250, 252, 0.55) !important;
 }
 
 .pb-safe {

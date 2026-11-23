@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Clock,
   KeyRound,
+  LogOut,
   MapPin,
   Send,
   ShieldCheck,
@@ -38,110 +39,127 @@ export const BuddyCipherModal: React.FC<BuddyCipherModalProps> = ({
   return (
     <AnimatePresence>
       {buddy && (
-        <>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm"
+            className="fixed inset-0 bg-slate-900/35 backdrop-blur-md"
           />
 
+          {/* 苹果 Wallet 凭证 + iMessage 临时频道 Sheet：结构完整永不截断 */}
           <motion.div
-            initial={{ opacity: 0, y: 36, scale: 0.96 }}
+            initial={{ opacity: 0, y: 48, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 24, scale: 0.96 }}
-            transition={{ type: 'spring', stiffness: 360, damping: 30 }}
-            className="fixed inset-x-3 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 top-1/2 -translate-y-1/2 z-50 w-auto sm:w-full max-w-md max-h-[86vh] flex flex-col rounded-3xl bg-[#0F1626] border border-white/15 shadow-2xl overflow-hidden"
+            exit={{ opacity: 0, y: 36, scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+            className="relative z-10 w-full sm:max-w-[460px] max-h-[90dvh] flex flex-col rounded-t-[30px] sm:rounded-[30px] bg-white/96 backdrop-blur-2xl border border-white shadow-[0_24px_64px_rgba(15,23,42,0.22)] overflow-hidden"
           >
-            {/* 头部 */}
-            <div className="px-5 py-4 border-b border-white/10 flex items-start justify-between gap-2">
-              <div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/35 text-emerald-300 text-[11px] font-medium mb-1">
+            <div className="flex justify-center pt-2.5 sm:hidden shrink-0">
+              <div className="w-9 h-1 rounded-full bg-slate-300" />
+            </div>
+
+            {/* 固定头部 */}
+            <div className="px-5 pt-3.5 pb-3 border-b border-slate-100 flex items-start justify-between gap-3 shrink-0">
+              <div className="min-w-0">
+                <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#34C759] text-[11px] font-semibold mb-1">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   已举手加入 · 临时暗号频道
                 </div>
-                <h3 className="text-sm sm:text-base font-bold text-white leading-snug">
+                <h3 className="text-[16px] font-bold text-[#1D1D1F] leading-snug tracking-tight">
                   {buddy.title}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-300 shrink-0"
+                aria-label="关闭频道"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200/80 flex items-center justify-center text-slate-500 shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-5 space-y-4 overflow-y-auto custom-scrollbar flex-1">
-              {/* 集合暗号卡片 */}
-              <div className="rounded-2xl bg-gradient-to-br from-sky-500/15 via-slate-900/90 to-emerald-500/10 border border-sky-400/30 p-4 space-y-2">
-                <div className="flex items-center justify-between text-xs text-sky-200">
+            {/* 中间可滚动区域：暗号卡 + 聊天流 */}
+            <div className="p-5 space-y-4 overflow-y-auto custom-scrollbar flex-1 min-h-0">
+              {/* Apple Wallet 风格接头暗号卡 */}
+              <div className="rounded-[22px] bg-gradient-to-br from-[#007AFF] to-[#5856D6] p-4 text-white shadow-[0_12px_28px_rgba(0,122,255,0.26)] space-y-2.5">
+                <div className="flex items-center justify-between text-xs text-white/85">
                   <span className="flex items-center gap-1.5 font-semibold">
-                    <KeyRound className="w-4 h-4" />
+                    <KeyRound className="w-3.5 h-3.5" />
                     接头暗号 / 辨认特征
                   </span>
-                  <span className="inline-flex items-center gap-1 font-mono text-[11px] text-amber-300">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 font-mono text-[11px] font-semibold">
                     <Clock className="w-3 h-3" />
-                    剩余 {remainingText}
+                    剩 {remainingText}
                   </span>
                 </div>
-                <p className="text-base font-bold text-white">
+
+                <p className="text-[17px] font-bold tracking-tight">
                   “{buddy.cipher}”
                 </p>
-                <div className="flex items-center justify-between text-[11px] text-slate-300 pt-1">
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+
+                <div className="pt-2 border-t border-white/20 flex items-center justify-between text-[11.5px] text-white/90">
+                  <span className="flex items-center gap-1 truncate pr-2">
+                    <MapPin className="w-3.5 h-3.5 shrink-0" />
                     {buddy.location}
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5 text-sky-300" />
+                  <span className="flex items-center gap-1 shrink-0 font-semibold">
+                    <Users className="w-3.5 h-3.5" />
                     {buddy.joinedCount}/{buddy.maxPeople} 人
                   </span>
                 </div>
               </div>
 
-              {/* 边界声明 */}
-              <div className="rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2 text-[11px] text-slate-300 text-center">
-                🫧 {buddy.boundaryTag} · 倒计时结束自动销毁聊天记录
+              <div className="rounded-2xl bg-[#F2F2F7] px-3.5 py-2 text-[11.5px] text-slate-600 text-center font-medium">
+                🫧 {buddy.boundaryTag} · 到点自动销毁临时消息
               </div>
 
-              {/* 临时轻聊流 */}
-              <div className="space-y-2 max-h-44 overflow-y-auto custom-scrollbar pr-1">
-                {buddy.quickMessages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={`rounded-2xl px-3.5 py-2.5 text-xs ${
-                      m.sender.startsWith('我')
-                        ? 'bg-emerald-500/20 border border-emerald-400/30 text-emerald-100 ml-8'
-                        : 'bg-white/[0.05] border border-white/10 text-slate-200 mr-8'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 mb-0.5">
-                      <span>{m.sender}</span>
-                      <span>{m.time}</span>
+              {/* iMessage 风格气泡流 */}
+              <div className="space-y-2.5">
+                {buddy.quickMessages.map((m) => {
+                  const isMe = m.sender.startsWith('我');
+                  return (
+                    <div
+                      key={m.id}
+                      className={`flex flex-col ${
+                        isMe ? 'items-end' : 'items-start'
+                      }`}
+                    >
+                      <span className="text-[10px] text-slate-400 px-2 mb-0.5">
+                        {m.sender} · {m.time}
+                      </span>
+                      <div
+                        className={`max-w-[82%] rounded-[20px] px-3.5 py-2 text-[13px] leading-relaxed ${
+                          isMe
+                            ? 'bg-[#007AFF] text-white rounded-br-md'
+                            : 'bg-[#F2F2F7] text-[#1D1D1F] rounded-bl-md'
+                        }`}
+                      >
+                        {m.text}
+                      </div>
                     </div>
-                    <p className="leading-relaxed">{m.text}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+            </div>
 
-              {/* 零压力快捷短语 */}
-              <div className="flex flex-wrap gap-1.5">
+            {/* 固定底部快捷短语 + 输入栏 + 退出按钮（永不裁切） */}
+            <div className="px-4 py-3 border-t border-slate-100 bg-white/95 space-y-2.5 shrink-0 pb-safe">
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
                 {QUICK_CIPHER_MESSAGES.map((phrase) => (
                   <button
                     key={phrase}
                     type="button"
                     onClick={() => handleSend(phrase)}
-                    className="px-2.5 py-1 rounded-full text-[11px] bg-white/[0.05] hover:bg-sky-500/20 text-slate-300 hover:text-sky-200 border border-white/10 transition-colors"
+                    className="shrink-0 px-3 py-1 rounded-full text-[11px] font-medium bg-[#F2F2F7] hover:bg-slate-200/80 text-slate-700 transition-colors"
                   >
                     {phrase}
                   </button>
                 ))}
               </div>
 
-              {/* 输入一句短消息 */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -154,12 +172,12 @@ export const BuddyCipherModal: React.FC<BuddyCipherModalProps> = ({
                   value={customMsg}
                   onChange={(e) => setCustomMsg(e.target.value)}
                   placeholder="发一句简短位置确认…"
-                  className="flex-1 rounded-xl bg-slate-950/75 border border-white/12 px-3.5 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/50"
+                  className="flex-1 rounded-full bg-[#F2F2F7] border border-transparent focus:border-[#007AFF] focus:bg-white px-4 py-2 text-xs text-[#1D1D1F] placeholder:text-slate-400 focus:outline-none transition-all"
                 />
                 <button
                   type="submit"
                   disabled={!customMsg.trim()}
-                  className="p-2.5 rounded-xl bg-sky-400/20 hover:bg-sky-400/30 text-sky-200 border border-sky-400/40 disabled:opacity-40"
+                  className="w-9 h-9 rounded-full bg-[#007AFF] text-white flex items-center justify-center disabled:opacity-35 shrink-0 shadow-sm"
                 >
                   <Send className="w-3.5 h-3.5" />
                 </button>
@@ -168,13 +186,14 @@ export const BuddyCipherModal: React.FC<BuddyCipherModalProps> = ({
               <button
                 type="button"
                 onClick={() => onLeave(buddy.id)}
-                className="w-full py-2 rounded-xl text-xs text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors"
+                className="w-full py-1.5 rounded-xl text-[11.5px] font-medium text-slate-400 hover:text-[#FF3B30] hover:bg-rose-50 flex items-center justify-center gap-1 transition-colors"
               >
+                <LogOut className="w-3 h-3" />
                 临时有事，悄悄退出本次搭子
               </button>
             </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );
