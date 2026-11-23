@@ -7,7 +7,7 @@ Component({
   },
 
   data: {
-    mode: 'email',
+    mode: 'wechat',
     email: '',
     code: '',
     nickname: '',
