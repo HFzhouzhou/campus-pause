@@ -23,10 +23,10 @@ export const PRESET_AVATARS = [
 function getAuthApiBase(): string {
   const configured = (import.meta.env.VITE_AUTH_API_BASE || '').trim();
   if (configured) return configured.replace(/\/$/, '');
-  // 线上部署在 https://8.148.11.126/campus-pause/ 时默认自动走同源 /campus-pause-api
   if (
     typeof window !== 'undefined' &&
-    window.location.pathname.startsWith('/campus-pause')
+    (window.location.hostname === 'pause.jingshutech.top' ||
+      window.location.pathname.startsWith('/campus-pause'))
   ) {
     return '/campus-pause-api';
   }
