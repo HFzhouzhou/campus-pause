@@ -615,3 +615,35 @@
 .flex-15 {
   flex: 1.5;
 }
+
+.buddy-admin-btn {
+  padding: 6rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(79, 70, 229, 0.12);
+  color: #4f46e5;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.chat-admin-ops {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 6rpx;
+  padding: 0 8rpx;
+}
+
+.chat-adm-edit {
+  font-size: 19rpx;
+  font-weight: 600;
+  color: #4f46e5;
+}
+
+.chat-adm-del {
+  font-size: 19rpx;
+  font-weight: 600;
+  color: #ff3b30;
+}
+
+.sheet-mask-top {
+  z-index: 1050;
+}

@@ -1,3 +1,6 @@
+const { requestApi, isFallbackableError } = require('./api');
+const auth = require('./auth');
+
 const STORAGE_KEY = 'cp_mp_buddies_v1';
 
 const BUDDY_CATEGORIES = [
@@ -34,7 +37,12 @@ function buildInitialBuddies() {
       boundaryTag: '活动结束自动解散 · 不强制加微信',
       isSilent: true,
       quickMessages: [
-        { id: 'qm-1', sender: '低电量步行者', text: '我在看台口栏杆旁，到了直接一起开走～', time: '3分钟前' },
+        {
+          id: 'qm-1',
+          sender: '低电量步行者',
+          text: '我在看台口栏杆旁，到了直接一起开走～',
+          time: '3分钟前',
+        },
       ],
     },
     {
@@ -53,7 +61,12 @@ function buildInitialBuddies() {
       boundaryTag: '活动结束自动解散 · 不强制加微信',
       isSilent: false,
       quickMessages: [
-        { id: 'qm-2', sender: '干饭要紧同学', text: '我先去占个二人位，各自点想吃的就好！', time: '5分钟前' },
+        {
+          id: 'qm-2',
+          sender: '干饭要紧同学',
+          text: '我先去占个二人位，各自点想吃的就好！',
+          time: '5分钟前',
+        },
       ],
     },
     {
@@ -72,7 +85,12 @@ function buildInitialBuddies() {
       boundaryTag: '活动结束自动解散 · 不强制加微信',
       isSilent: true,
       quickMessages: [
-        { id: 'qm-3', sender: '专四冲刺中', text: '已反扣手机开始计时，来了直接坐对面就行。', time: '2分钟前' },
+        {
+          id: 'qm-3',
+          sender: '专四冲刺中',
+          text: '已反扣手机开始计时，来了直接坐对面就行。',
+          time: '2分钟前',
+        },
       ],
     },
     {
@@ -91,10 +109,20 @@ function buildInitialBuddies() {
       boundaryTag: '活动结束自动解散 · 不强制加微信',
       isSilent: true,
       quickMessages: [
-        { id: 'qm-4', sender: '南宁晚霞观测员', text: '西边天空已经开始泛金黄色了！', time: '刚刚' },
+        {
+          id: 'qm-4',
+          sender: '南宁晚霞观测员',
+          text: '西边天空已经开始泛金黄色了！',
+          time: '刚刚',
+        },
       ],
     },
   ];
+}
+
+function saveAll(list) {
+  wx.setStorageSync(STORAGE_KEY, list);
+  return list;
 }
 
 function getAll() {
@@ -102,8 +130,7 @@ function getAll() {
   const now = Date.now();
   if (!stored || !Array.isArray(stored) || stored.length === 0) {
     const fresh = buildInitialBuddies();
-    wx.setStorageSync(STORAGE_KEY, fresh);
-    return fresh;
+    return saveAll(fresh);
   }
   const hasActive = stored.some((b) => b.expiresAt > now + 60 * 1000);
   if (!hasActive) {
@@ -111,43 +138,155 @@ function getAll() {
       ...b,
       expiresAt: now + (18 + ((idx * 4) % 12)) * 60 * 1000,
     }));
-    wx.setStorageSync(STORAGE_KEY, refreshed);
-    return refreshed;
+    return saveAll(refreshed);
   }
   return stored;
 }
 
-function createBuddy(input) {
-  const created = {
-    id: `buddy-ugc-${Date.now()}`,
+async function syncFromServer() {
+  try {
+    const res = await requestApi('/content/buddies', 'GET', {}, auth.getToken());
+    if (res && Array.isArray(res.buddies)) {
+      return { list: saveAll(res.buddies), synced: true };
+    }
+  } catch (err) {
+    if (!isFallbackableError(err)) throw err;
+  }
+  return { list: getAll(), synced: false };
+}
+
+async function createBuddy(input) {
+  const token = auth.getToken();
+  const reqBody = {
     title: input.title.trim(),
     category: input.category,
     location: input.location.trim(),
-    durationMinutes: input.durationMinutes,
-    expiresAt: Date.now() + input.durationMinutes * 60 * 1000,
-    maxPeople: input.maxPeople,
+    durationMinutes: Number(input.durationMinutes || 30),
+    maxPeople: Number(input.maxPeople || 2),
+    cipher: (input.cipher || '').trim() || '挥挥手机亮屏示意',
+    vibeNote: (input.vibeNote || '').trim() || '主打轻松无压，30分钟一起充个电，到点自由散场。',
+    isSilent: Boolean(input.isSilent),
+  };
+
+  try {
+    const res = await requestApi('/content/buddies', 'POST', reqBody, token);
+    if (res && res.buddy && Array.isArray(res.buddies)) {
+      const list = saveAll(res.buddies);
+      return { created: res.buddy, list, synced: true };
+    }
+  } catch (err) {
+    if (!isFallbackableError(err)) throw err;
+  }
+
+  const created = {
+    id: `buddy-ugc-${Date.now()}`,
+    title: reqBody.title,
+    category: reqBody.category,
+    location: reqBody.location,
+    durationMinutes: reqBody.durationMinutes,
+    expiresAt: Date.now() + reqBody.durationMinutes * 60 * 1000,
+    maxPeople: reqBody.maxPeople,
     joinedCount: 1,
     joinedByMe: true,
     hostAlias: input.hostAlias || '五合同学',
-    cipher: (input.cipher || '').trim() || '挥挥手机亮屏示意',
-    vibeNote: (input.vibeNote || '').trim() || '主打轻松无压，30分钟一起充个电，到点自由散场。',
+    cipher: reqBody.cipher,
+    vibeNote: reqBody.vibeNote,
     boundaryTag: '活动结束自动解散 · 不强制加微信',
-    isSilent: Boolean(input.isSilent),
+    isSilent: reqBody.isSilent,
     quickMessages: [
       {
         id: `qm-${Date.now()}`,
         sender: input.hostAlias || '五合同学',
-        text: `临时频道已开启，暗号：${(input.cipher || '').trim() || '挥挥手机亮屏示意'}`,
+        text: `临时频道已开启，暗号：${reqBody.cipher}`,
         time: '刚刚',
       },
     ],
   };
-  const next = [created, ...getAll()];
-  wx.setStorageSync(STORAGE_KEY, next);
-  return { created, list: next };
+  const next = saveAll([created, ...getAll()]);
+  return { created, list: next, synced: false };
 }
 
-function toggleJoin(id) {
+async function updateBuddy(id, patch) {
+  const token = auth.getToken();
+  const me = auth.getCurrentUser();
+  if (!auth.isAdmin(me)) {
+    throw new Error('仅管理员或超级管理员可编辑搭子内容');
+  }
+
+  const reqBody = {
+    id,
+    title: (patch.title || '').trim(),
+    category: patch.category,
+    location: (patch.location || '').trim(),
+    durationMinutes: Number(patch.durationMinutes || 30),
+    maxPeople: Number(patch.maxPeople || 2),
+    hostAlias: (patch.hostAlias || '').trim(),
+    cipher: (patch.cipher || '').trim(),
+    vibeNote: (patch.vibeNote || '').trim(),
+    isSilent: Boolean(patch.isSilent),
+    resetCountdown: Boolean(patch.resetCountdown),
+  };
+
+  try {
+    const res = await requestApi('/content/buddies/update', 'POST', reqBody, token);
+    if (res && Array.isArray(res.buddies)) {
+      return { buddy: res.buddy, list: saveAll(res.buddies), synced: true };
+    }
+  } catch (err) {
+    if (!isFallbackableError(err)) throw err;
+  }
+
+  const next = getAll().map((b) => {
+    if (b.id !== id) return b;
+    const duration = reqBody.durationMinutes || b.durationMinutes;
+    return {
+      ...b,
+      title: reqBody.title || b.title,
+      category: reqBody.category || b.category,
+      location: reqBody.location || b.location,
+      durationMinutes: duration,
+      maxPeople: reqBody.maxPeople || b.maxPeople,
+      hostAlias: reqBody.hostAlias || b.hostAlias,
+      cipher: reqBody.cipher || b.cipher,
+      vibeNote: reqBody.vibeNote !== undefined ? reqBody.vibeNote : b.vibeNote,
+      isSilent: reqBody.isSilent,
+      expiresAt: reqBody.resetCountdown ? Date.now() + duration * 60 * 1000 : b.expiresAt,
+    };
+  });
+  const saved = saveAll(next);
+  return { buddy: saved.find((b) => b.id === id) || null, list: saved, synced: false };
+}
+
+async function deleteBuddy(id) {
+  const token = auth.getToken();
+  const me = auth.getCurrentUser();
+  if (!auth.isAdmin(me)) {
+    throw new Error('仅管理员或超级管理员可删除搭子');
+  }
+
+  try {
+    const res = await requestApi('/content/buddies/delete', 'POST', { id }, token);
+    if (res && Array.isArray(res.buddies)) {
+      return { list: saveAll(res.buddies), synced: true };
+    }
+  } catch (err) {
+    if (!isFallbackableError(err)) throw err;
+  }
+
+  return { list: saveAll(getAll().filter((b) => b.id !== id)), synced: false };
+}
+
+async function toggleJoin(id) {
+  const token = auth.getToken();
+  try {
+    const res = await requestApi('/content/buddies/join', 'POST', { id }, token);
+    if (res && Array.isArray(res.buddies)) {
+      return saveAll(res.buddies);
+    }
+  } catch (err) {
+    if (!isFallbackableError(err)) throw err;
+  }
+
   const next = getAll().map((b) => {
     if (b.id !== id) return b;
     if (b.joinedByMe) {
@@ -156,30 +295,125 @@ function toggleJoin(id) {
     if (b.joinedCount >= b.maxPeople) return b;
     return { ...b, joinedByMe: true, joinedCount: b.joinedCount + 1 };
   });
-  wx.setStorageSync(STORAGE_KEY, next);
-  return next;
+  return saveAll(next);
 }
 
-function sendQuickMessage(id, text) {
+async function sendQuickMessage(id, text) {
+  const token = auth.getToken();
+  const me = auth.getCurrentUser();
+  try {
+    const res = await requestApi(
+      '/content/buddies/message',
+      'POST',
+      { buddyId: id, text: text.trim() },
+      token
+    );
+    if (res && Array.isArray(res.buddies)) {
+      return saveAll(res.buddies);
+    }
+  } catch (err) {
+    if (!isFallbackableError(err)) throw err;
+  }
+
   const next = getAll().map((b) => {
     if (b.id !== id) return b;
     return {
       ...b,
       quickMessages: [
         ...(b.quickMessages || []),
-        { id: `qm-${Date.now()}`, sender: '我（已举手）', text: text.trim(), time: '刚刚' },
+        {
+          id: `qm-${Date.now()}`,
+          sender: (me && me.nickname) || '我（已举手）',
+          isMe: true,
+          text: text.trim(),
+          time: '刚刚',
+        },
       ],
     };
   });
-  wx.setStorageSync(STORAGE_KEY, next);
-  return next;
+  return saveAll(next);
+}
+
+async function updateQuickMessage(buddyId, msgId, patch) {
+  const token = auth.getToken();
+  const me = auth.getCurrentUser();
+  if (!auth.isAdmin(me)) {
+    throw new Error('仅管理员或超级管理员可编辑频道消息');
+  }
+
+  try {
+    const res = await requestApi(
+      '/content/buddies/message/update',
+      'POST',
+      { id: msgId, text: (patch.text || '').trim(), sender: (patch.sender || '').trim() },
+      token
+    );
+    if (res && Array.isArray(res.buddies)) {
+      return { list: saveAll(res.buddies), synced: true };
+    }
+  } catch (err) {
+    if (!isFallbackableError(err)) throw err;
+  }
+
+  const next = getAll().map((b) => {
+    if (buddyId && b.id !== buddyId) return b;
+    return {
+      ...b,
+      quickMessages: (b.quickMessages || []).map((m) =>
+        m.id === msgId
+          ? {
+              ...m,
+              text: (patch.text || m.text).trim(),
+              sender: (patch.sender || m.sender).trim(),
+            }
+          : m
+      ),
+    };
+  });
+  return { list: saveAll(next), synced: false };
+}
+
+async function deleteQuickMessage(buddyId, msgId) {
+  const token = auth.getToken();
+  const me = auth.getCurrentUser();
+  if (!auth.isAdmin(me)) {
+    throw new Error('仅管理员或超级管理员可删除频道消息');
+  }
+
+  try {
+    const res = await requestApi(
+      '/content/buddies/message/delete',
+      'POST',
+      { id: msgId },
+      token
+    );
+    if (res && Array.isArray(res.buddies)) {
+      return { list: saveAll(res.buddies), synced: true };
+    }
+  } catch (err) {
+    if (!isFallbackableError(err)) throw err;
+  }
+
+  const next = getAll().map((b) => {
+    if (buddyId && b.id !== buddyId) return b;
+    return {
+      ...b,
+      quickMessages: (b.quickMessages || []).filter((m) => m.id !== msgId),
+    };
+  });
+  return { list: saveAll(next), synced: false };
 }
 
 module.exports = {
   BUDDY_CATEGORIES,
   QUICK_CIPHER_MESSAGES,
   getAll,
+  syncFromServer,
   createBuddy,
+  updateBuddy,
+  deleteBuddy,
   toggleJoin,
   sendQuickMessage,
+  updateQuickMessage,
+  deleteQuickMessage,
 };

@@ -27,6 +27,7 @@
       <view wx:if="{{user}}" class="liquid-dock account-pill" hover-class="tap-active" bindtap="openProfile">
         <image class="account-avatar" src="{{user.avatarUrl}}" mode="aspectFill" />
         <text class="account-name">{{user.nickname}}</text>
+        <text wx:if="{{user.shortRoleBadge}}" class="role-tag-mini {{user.isSuperAdmin ? 'role-tag-super' : 'role-tag-admin'}}">{{user.shortRoleBadge}}</text>
       </view>
       <view wx:else class="liquid-dock account-pill-guest" hover-class="tap-active" bindtap="openAuthManual">
         <text>登录</text>
@@ -97,11 +98,13 @@
     </view>
   </view>
 
-  <!-- 选点模式准星 -->
+  <!-- 选点模式准星（新增地点 / 管理员重新定位共用） -->
   <view wx:if="{{isPickMode}}" class="crosshair-overlay">
-    <view class="liquid-dock crosshair-label">{{geoSuggestionName || '拖动地图对准你想标记的位置'}}</view>
-    <view class="crosshair-ring">
-      <view class="crosshair-core"></view>
+    <view class="liquid-dock crosshair-label">
+      {{pickModePurpose === 'edit' ? ('调整「' + editName + '」位置 · 拖动对准新坐标') : (geoSuggestionName || '拖动地图对准你想标记的位置')}}
+    </view>
+    <view class="crosshair-ring {{pickModePurpose === 'edit' ? 'crosshair-ring-edit' : ''}}">
+      <view class="crosshair-core {{pickModePurpose === 'edit' ? 'crosshair-core-edit' : ''}}"></view>
     </view>
   </view>
 
@@ -110,18 +113,26 @@
     <block wx:if="{{isPickMode}}">
       <view class="pick-bar liquid-dock">
         <view class="pick-meta">
-          <text class="pick-title">{{geoSuggestionName || '已锁定校园坐标'}}</text>
+          <text class="pick-title">{{pickModePurpose === 'edit' ? ('新位置：' + (geoSuggestionName || editName)) : (geoSuggestionName || '已锁定校园坐标')}}</text>
           <text class="pick-coord">{{pickCoordText}}</text>
         </view>
         <view class="pick-actions">
-          <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="cancelPickMode">取消</view>
-          <view class="ios-btn ios-btn-primary flex-15" hover-class="tap-active" bindtap="confirmPickLocation">确认此位置</view>
+          <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="cancelPickMode">{{pickModePurpose === 'edit' ? '返回编辑' : '取消'}}</view>
+          <view class="ios-btn ios-btn-primary flex-15" hover-class="tap-active" bindtap="confirmPickLocation">{{pickModePurpose === 'edit' ? '确认新坐标' : '确认此位置'}}</view>
         </view>
       </view>
     </block>
 
     <block wx:else>
       <view class="fab-row">
+        <view
+          wx:if="{{user && user.isAdmin}}"
+          class="admin-fab {{user.isSuperAdmin ? 'admin-fab-super' : ''}}"
+          hover-class="tap-active"
+          bindtap="openAdminConsole"
+        >
+          <text>{{user.isSuperAdmin ? '👑 超管后台' : '🛡️ 管理后台'}}</text>
+        </view>
         <view class="mark-fab" hover-class="tap-active" bindtap="onEnterPickMode">
           <text class="mark-fab-plus">+</text>
           <text>标记治愈点</text>
@@ -168,8 +179,18 @@
               >
                 <text>{{item.likedByMe ? '♥' : '♡'}} {{item.likes}}</text>
               </view>
-              <view class="go-pill" hover-class="tap-active" data-id="{{item.id}}" catchtap="openSpotDetail">
-                <text>去这里 · 详情 ›</text>
+
+              <view class="spot-foot-right">
+                <view
+                  wx:if="{{user && user.isAdmin}}"
+                  class="card-admin-btn"
+                  hover-class="tap-active"
+                  data-id="{{item.id}}"
+                  catchtap="openEditSpot"
+                >✎ 编辑</view>
+                <view class="go-pill" hover-class="tap-active" data-id="{{item.id}}" catchtap="openSpotDetail">
+                  <text>去这里 · 详情 ›</text>
+                </view>
               </view>
             </view>
           </view>
@@ -196,6 +217,15 @@
 
       <scroll-view scroll-y class="sheet-scroll">
         <view class="sheet-inner">
+          <!-- 管理员快捷操作条 -->
+          <view wx:if="{{user && user.isAdmin}}" class="detail-admin-bar">
+            <text class="detail-admin-hint">🛡️ 管理员操作 · 坐标 {{detailSpot.coordText}}</text>
+            <view class="detail-admin-btns">
+              <view class="admin-edit-pill" hover-class="tap-active" data-id="{{detailSpot.id}}" bindtap="openEditSpot">✎ 编辑地点/位置</view>
+              <view class="admin-del-pill" hover-class="tap-active" data-id="{{detailSpot.id}}" bindtap="onDeleteSpot">删除</view>
+            </view>
+          </view>
+
           <image class="detail-cover" src="{{detailSpot.coverUrl}}" mode="aspectFill" />
           <view class="detail-quote">“{{detailSpot.recommendation}}”</view>
 
@@ -243,6 +273,10 @@
                 <text class="review-time">{{item.moodTag}} · {{item.createdAt}}</text>
               </view>
               <text class="review-content">{{item.content}}</text>
+              <view wx:if="{{user && user.isAdmin}}" class="review-admin-row">
+                <text class="rev-adm-link" data-id="{{item.id}}" bindtap="openEditReview">✎ 编辑打卡</text>
+                <text class="rev-adm-del" data-id="{{item.id}}" bindtap="onDeleteReview">删除</text>
+              </view>
             </view>
           </view>
         </view>
@@ -328,7 +362,147 @@
 
       <view class="sheet-footer">
         <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="closeAddModal">取消</view>
-        <view class="ios-btn ios-btn-primary flex-15" hover-class="tap-active" bindtap="onSubmitAddSpot">发布到治愈地图</view>
+        <view class="ios-btn ios-btn-primary flex-15 {{submittingAdd ? 'ios-btn-disabled' : ''}}" hover-class="tap-active" bindtap="onSubmitAddSpot">
+          {{submittingAdd ? '发布中…' : '发布到治愈地图'}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 管理员编辑地图地点 Sheet -->
+  <view wx:if="{{editModalVisible}}" class="sheet-mask" bindtap="closeEditModal">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view class="header-text-wrap">
+          <view class="sheet-title">管理员编辑地图地点</view>
+          <view class="sheet-subtitle">支持修改地点文字、封面与地图经纬度坐标</view>
+        </view>
+        <view class="sheet-close" hover-class="tap-active" bindtap="closeEditModal">✕</view>
+      </view>
+
+      <scroll-view scroll-y class="sheet-scroll">
+        <view class="sheet-inner">
+          <view class="ugc-photo-box" bindtap="onChooseEditPhoto">
+            <image class="ugc-photo-preview" src="{{editCoverUrl}}" mode="aspectFill" />
+            <view class="ugc-photo-btn">更换地点封面图</view>
+          </view>
+
+          <scroll-view scroll-x class="preset-scroll" show-scrollbar="{{false}}">
+            <view
+              wx:for="{{presetPhotos}}"
+              wx:key="id"
+              class="preset-chip {{editCoverUrl === item.url ? 'preset-chip-active' : ''}}"
+              data-url="{{item.url}}"
+              bindtap="onSelectEditPresetPhoto"
+            >{{item.label}}</view>
+          </scroll-view>
+
+          <view class="form-group">
+            <view class="coord-head-row">
+              <text class="form-label">地图坐标位置</text>
+              <view class="reposition-pill" hover-class="tap-active" bindtap="onStartRepositionSpot">📍 在地图上拖动选点</view>
+            </view>
+            <view class="coord-input-row">
+              <input class="form-input flex-1" type="digit" value="{{editLngText}}" placeholder="经度" bindinput="onEditLngText" />
+              <input class="form-input flex-1" type="digit" value="{{editLatText}}" placeholder="纬度" bindinput="onEditLatText" />
+            </view>
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">地点名称 *</text>
+            <input class="form-input" value="{{editName}}" maxlength="36" bindinput="onEditName" />
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">治愈分类</text>
+            <view class="tag-wrap">
+              <view
+                wx:for="{{selectableCategories}}"
+                wx:key="id"
+                class="tag-chip {{editCategory === item.id ? 'tag-chip-active' : ''}}"
+                data-id="{{item.id}}"
+                bindtap="onEditCat"
+              >{{item.emoji}} {{item.label}}</view>
+            </view>
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">此刻安静度</text>
+            <view class="quiet-btn-row">
+              <view class="quiet-btn {{editQuietStatus === 'very_quiet' ? 'quiet-btn-active' : ''}}" data-status="very_quiet" bindtap="onEditQuiet">很安静</view>
+              <view class="quiet-btn {{editQuietStatus === 'moderate' ? 'quiet-btn-active' : ''}}" data-status="moderate" bindtap="onEditQuiet">人不多</view>
+              <view class="quiet-btn {{editQuietStatus === 'crowded' ? 'quiet-btn-active' : ''}}" data-status="crowded" bindtap="onEditQuiet">有点吵</view>
+            </view>
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">安静指数（{{editRating}} 星）</text>
+            <view class="star-row">
+              <text
+                wx:for="{{[1,2,3,4,5]}}"
+                wx:key="*this"
+                class="star-btn {{item <= editRating ? 'star-on' : ''}}"
+                data-star="{{item}}"
+                bindtap="onEditStar"
+              >★</text>
+            </view>
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">发布者显示名</text>
+            <input class="form-input" value="{{editAuthorName}}" maxlength="24" bindinput="onEditAuthor" />
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">标签（逗号或空格分隔）</text>
+            <input class="form-input" value="{{editTagsText}}" bindinput="onEditTags" />
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">安利理由 *</text>
+            <textarea class="form-textarea" value="{{editReason}}" maxlength="200" bindinput="onEditReason" />
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="sheet-footer">
+        <view class="ios-btn ios-btn-danger" hover-class="tap-active" bindtap="onDeleteSpot">删除</view>
+        <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="closeEditModal">取消</view>
+        <view class="ios-btn ios-btn-primary flex-15 {{savingEdit ? 'ios-btn-disabled' : ''}}" hover-class="tap-active" bindtap="onSubmitEditSpot">
+          {{savingEdit ? '保存中…' : '保存修改'}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 管理员编辑单条打卡 Sheet -->
+  <view wx:if="{{editReviewVisible}}" class="sheet-mask sheet-mask-top" bindtap="closeEditReview">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view class="header-text-wrap">
+          <view class="sheet-title">编辑用户打卡内容</view>
+        </view>
+        <view class="sheet-close" hover-class="tap-active" bindtap="closeEditReview">✕</view>
+      </view>
+      <view class="sheet-inner">
+        <view class="form-group">
+          <text class="form-label">发布者昵称</text>
+          <input class="form-input" value="{{editReviewAuthor}}" maxlength="24" bindinput="onEditRevAuthor" />
+        </view>
+        <view class="form-group">
+          <text class="form-label">情绪标签</text>
+          <input class="form-input" value="{{editReviewMood}}" maxlength="20" bindinput="onEditRevMood" />
+        </view>
+        <view class="form-group">
+          <text class="form-label">打卡内容 *</text>
+          <textarea class="form-textarea" value="{{editReviewContent}}" maxlength="240" bindinput="onEditRevContent" />
+        </view>
+      </view>
+      <view class="sheet-footer">
+        <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="closeEditReview">取消</view>
+        <view class="ios-btn ios-btn-primary flex-15" hover-class="tap-active" bindtap="onSubmitEditReview">保存修改</view>
       </view>
     </view>
   </view>

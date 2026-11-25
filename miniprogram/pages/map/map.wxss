@@ -294,7 +294,121 @@
 .fab-row {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 14rpx;
   padding: 0 28rpx 16rpx;
+}
+
+.admin-fab {
+  display: inline-flex;
+  align-items: center;
+  height: 76rpx;
+  padding: 0 28rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  color: #ffffff;
+  font-size: 24rpx;
+  font-weight: 700;
+  box-shadow: 0 12rpx 28rpx rgba(79, 70, 229, 0.3);
+}
+
+.admin-fab-super {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  box-shadow: 0 12rpx 28rpx rgba(180, 83, 9, 0.32);
+}
+
+.crosshair-ring-edit {
+  border-color: #d97706;
+  background: rgba(217, 119, 6, 0.16);
+}
+
+.crosshair-core-edit {
+  background: #d97706;
+}
+
+.spot-foot-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.card-admin-btn {
+  height: 56rpx;
+  padding: 0 22rpx;
+  border-radius: 999rpx;
+  background: rgba(79, 70, 229, 0.12);
+  color: #4f46e5;
+  display: inline-flex;
+  align-items: center;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.detail-admin-bar {
+  background: #f5f3ff;
+  border: 1.5rpx solid rgba(99, 102, 241, 0.22);
+  border-radius: 26rpx;
+  padding: 18rpx 22rpx;
+  margin-bottom: 22rpx;
+}
+
+.detail-admin-hint {
+  display: block;
+  font-size: 21rpx;
+  font-weight: 600;
+  color: #4f46e5;
+  margin-bottom: 12rpx;
+}
+
+.detail-admin-btns {
+  display: flex;
+  gap: 12rpx;
+}
+
+.review-admin-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 20rpx;
+  margin-top: 12rpx;
+  padding-top: 10rpx;
+  border-top: 1rpx solid rgba(15, 23, 42, 0.05);
+}
+
+.rev-adm-link {
+  font-size: 21rpx;
+  font-weight: 600;
+  color: #4f46e5;
+}
+
+.rev-adm-del {
+  font-size: 21rpx;
+  font-weight: 600;
+  color: #ff3b30;
+}
+
+.coord-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10rpx;
+}
+
+.reposition-pill {
+  padding: 8rpx 20rpx;
+  border-radius: 999rpx;
+  background: rgba(0, 122, 255, 0.12);
+  color: #007aff;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.coord-input-row {
+  display: flex;
+  gap: 14rpx;
+}
+
+.sheet-mask-top {
+  z-index: 1050;
 }
 
 .mark-fab {

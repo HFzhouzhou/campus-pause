@@ -4,8 +4,18 @@
     <view wx:if="{{user}}" class="liquid-dock account-pill" hover-class="tap-active" bindtap="openProfile">
       <image class="account-avatar" src="{{user.avatarUrl}}" mode="aspectFill" />
       <text class="account-name">{{user.nickname}}</text>
+      <text wx:if="{{user.shortRoleBadge}}" class="role-tag-mini {{user.isSuperAdmin ? 'role-tag-super' : 'role-tag-admin'}}">{{user.shortRoleBadge}}</text>
     </view>
     <view wx:else class="liquid-dock account-pill-guest" hover-class="tap-active" bindtap="openAuthManual">登录</view>
+
+    <view
+      wx:if="{{user && user.isAdmin}}"
+      class="liquid-dock admin-nav-pill {{user.isSuperAdmin ? 'admin-nav-pill-super' : ''}}"
+      hover-class="tap-active"
+      bindtap="openAdminConsole"
+    >
+      <text>{{user.isSuperAdmin ? '👑 超管' : '🛡️ 管理'}}</text>
+    </view>
   </view>
 
   <view class="page-head-block">
@@ -105,14 +115,20 @@
     </view>
   </view>
 
-  <!-- 同校悬浮虹彩液态泡泡（按 tone 拥有薄荷/琥珀/薰衣草专属通透光晕） -->
+  <!-- 同校悬浮虹彩液态泡泡 -->
   <view class="bubble-section">
     <view class="bubble-header">
       <view>
         <text class="bubble-sec-title">同校悬浮共鸣泡泡</text>
         <text class="bubble-sec-sub">长按泡泡蓄满暖光送出抱抱 · 关闭评论区</text>
       </view>
-      <view class="no-comment-pill">零评论内耗</view>
+      <view
+        wx:if="{{user && user.isAdmin}}"
+        class="bubble-add-pill"
+        hover-class="tap-active"
+        bindtap="openAddBubble"
+      >+ 发布泡泡</view>
+      <view wx:else class="no-comment-pill">零评论内耗</view>
     </view>
 
     <view
@@ -129,7 +145,7 @@
       <view class="soap-rim-dot"></view>
       <view class="bubble-top">
         <text class="bubble-tag">#{{item.tag}}</text>
-        <text class="bubble-time">五合匿名泡泡 · {{item.createdAt}}</text>
+        <text class="bubble-time">{{item.authorName || '五合匿名泡泡'}} · {{item.createdAt}}</text>
       </view>
       <text class="bubble-text">{{item.content}}</text>
 
@@ -148,10 +164,19 @@
           class="emp-pill {{item.empathizedByMe ? 'emp-pill-on' : ''}}"
           hover-class="tap-active"
           data-id="{{item.id}}"
+          catchtouchstart="noop"
           catchtap="onTapEmpathy"
         >
           <text>⚡ 同感 {{item.empathy}}</text>
         </view>
+        <view
+          wx:if="{{user && user.isAdmin}}"
+          class="bubble-edit-pill"
+          hover-class="tap-active"
+          data-id="{{item.id}}"
+          catchtouchstart="noop"
+          catchtap="openEditBubble"
+        >✎ 编辑</view>
       </view>
     </view>
   </view>
@@ -164,6 +189,57 @@
     <view class="vortex-ring"></view>
     <view class="vortex-card">{{shredSnapshot}}</view>
     <text class="vortex-tip">正在吸入黑洞彻底清空，不留任何记录…</text>
+  </view>
+
+  <!-- 管理员编辑/新增共鸣泡泡 Sheet -->
+  <view wx:if="{{bubbleEditVisible}}" class="sheet-mask" bindtap="closeBubbleEdit">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view class="header-text-wrap">
+          <view class="sheet-title">{{editBubbleId ? '管理员编辑共鸣泡泡' : '新增共鸣泡泡'}}</view>
+          <view class="sheet-subtitle">修改内容、话题标签或泡泡氛围色调</view>
+        </view>
+        <view class="sheet-close" hover-class="tap-active" bindtap="closeBubbleEdit">✕</view>
+      </view>
+
+      <scroll-view scroll-y class="sheet-scroll">
+        <view class="sheet-inner">
+          <view class="form-group">
+            <text class="form-label">话题标签</text>
+            <input class="form-input" value="{{editBubbleTag}}" maxlength="20" placeholder="如：低电量时刻" bindinput="onEditBubbleTag" />
+          </view>
+          <view class="form-group">
+            <text class="form-label">泡泡氛围色</text>
+            <view class="tone-row">
+              <view
+                wx:for="{{bubbleTones}}"
+                wx:key="id"
+                class="tone-btn {{editBubbleTone === item.id ? 'tone-btn-on' : ''}}"
+                data-tone="{{item.id}}"
+                bindtap="onEditBubbleTone"
+              >{{item.label}}</view>
+            </view>
+          </view>
+          <view class="form-group">
+            <text class="form-label">来源显示名</text>
+            <input class="form-input" value="{{editBubbleAuthor}}" maxlength="20" bindinput="onEditBubbleAuthor" />
+          </view>
+          <view class="form-group">
+            <text class="form-label">泡泡内容 *</text>
+            <textarea class="form-textarea" value="{{editBubbleContent}}" maxlength="240" bindinput="onEditBubbleContent" />
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="sheet-footer">
+        <view wx:if="{{editBubbleId}}" class="ios-btn ios-btn-danger" hover-class="tap-active" bindtap="onDeleteBubble">删除</view>
+        <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="closeBubbleEdit">取消</view>
+        <view class="ios-btn ios-btn-primary flex-15 {{savingBubble ? 'ios-btn-disabled' : ''}}" hover-class="tap-active" bindtap="onSaveBubbleEdit">
+          {{savingBubble ? '保存中…' : '保存泡泡'}}
+        </view>
+      </view>
+    </view>
   </view>
 
   <auth-sheet visible="{{authVisible}}" reason="{{authReason}}" bind:close="closeAuth" bind:success="onAuthSuccess" />

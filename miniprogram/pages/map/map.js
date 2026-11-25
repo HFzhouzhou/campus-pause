@@ -37,6 +37,7 @@ Page({
     reviewDraft: '',
 
     isPickMode: false,
+    pickModePurpose: 'add', // 'add' | 'edit'
     pickLng: geo.CAMPUS_CENTER.longitude,
     pickLat: geo.CAMPUS_CENTER.latitude,
     pickCoordText: `${geo.formatCoord(geo.CAMPUS_CENTER.longitude)}, ${geo.formatCoord(geo.CAMPUS_CENTER.latitude)}`,
@@ -49,6 +50,32 @@ Page({
     ugcCategory: 'sunset',
     ugcRating: 5,
     ugcReason: '',
+    submittingAdd: false,
+
+    // 管理员编辑地点弹窗
+    editModalVisible: false,
+    editSpotId: '',
+    editCoverUrl: spotsStore.PRESET_PHOTOS[0].url,
+    editName: '',
+    editCategory: 'sunset',
+    editRating: 5,
+    editQuietStatus: 'very_quiet',
+    editLng: geo.CAMPUS_CENTER.longitude,
+    editLat: geo.CAMPUS_CENTER.latitude,
+    editLngText: String(geo.CAMPUS_CENTER.longitude),
+    editLatText: String(geo.CAMPUS_CENTER.latitude),
+    editAuthorName: '',
+    editTagsText: '',
+    editReason: '',
+    savingEdit: false,
+
+    // 管理员编辑打卡评论弹窗
+    editReviewVisible: false,
+    editReviewSpotId: '',
+    editReviewId: '',
+    editReviewAuthor: '',
+    editReviewMood: '',
+    editReviewContent: '',
   },
 
   onLoad() {
@@ -62,12 +89,32 @@ Page({
       user: auth.getCurrentUser(),
     });
     this.refreshSpots();
+    this.syncServerSpots();
     this.requestCampusLocation(false);
   },
 
-  onShow() {
+  async onShow() {
     this.syncTabBar();
     this.setData({ user: auth.getCurrentUser() });
+    auth.refreshCurrentUser().then((fresh) => {
+      if (fresh) this.setData({ user: fresh });
+    });
+
+    await this.syncServerSpots();
+
+    // 处理从管理后台跳转过来拖动调整地点坐标的请求
+    const app = getApp();
+    const pending = app && app.globalData && app.globalData.pendingEditSpot;
+    if (pending && pending.id) {
+      app.globalData.pendingEditSpot = null;
+      const user = auth.getCurrentUser();
+      if (auth.isAdmin(user)) {
+        const target = this.data.allSpots.find((s) => s.id === pending.id);
+        if (target) {
+          this.prepareEditSpotData(target, Boolean(pending.openPick));
+        }
+      }
+    }
   },
 
   noop() {},
@@ -78,11 +125,27 @@ Page({
       const hasModal = Boolean(
         this.data.detailSpot ||
           this.data.addModalVisible ||
+          this.data.editModalVisible ||
+          this.data.editReviewVisible ||
           this.data.authVisible ||
           this.data.profileVisible
       );
       this.getTabBar().setData({ selected: 0, hidden: hasModal });
     }
+  },
+
+  async syncServerSpots(preferId) {
+    try {
+      await spotsStore.syncFromServer();
+      this.refreshSpots(preferId);
+    } catch (e) {
+      // 静默使用本地缓存
+    }
+  },
+
+  openAdminConsole() {
+    wx.vibrateShort({ type: 'light' });
+    wx.navigateTo({ url: '/pages/admin/admin' });
   },
 
   requireAuth(reason, action) {
@@ -176,6 +239,7 @@ Page({
       catAccent: cat.accent,
       ratingText: Number(spot.rating || 5).toFixed(1),
       distanceText: geo.formatDistance(dist),
+      coordText: `${geo.formatCoord(spot.longitude)}, ${geo.formatCoord(spot.latitude)}`,
       quietLabel: qm.label,
       quietColor: qm.color,
       quietBg: qm.bg,
@@ -193,8 +257,8 @@ Page({
         const catOk = activeCat === 'all' || s.category === activeCat;
         const qOk =
           !q ||
-          s.name.toLowerCase().includes(q) ||
-          s.recommendation.toLowerCase().includes(q);
+          (s.name || '').toLowerCase().includes(q) ||
+          (s.recommendation || '').toLowerCase().includes(q);
         return catOk && qOk;
       })
       .map((s) => this.decorateSpot(s));
@@ -230,7 +294,10 @@ Page({
     });
 
     const detailSpot = this.data.detailSpot
-      ? filtered.find((s) => s.id === this.data.detailSpot.id) || null
+      ? filtered.find((s) => s.id === this.data.detailSpot.id) ||
+        (raw.find((s) => s.id === this.data.detailSpot.id)
+          ? this.decorateSpot(raw.find((s) => s.id === this.data.detailSpot.id))
+          : null)
       : null;
 
     this.setData({
@@ -281,6 +348,7 @@ Page({
       mapScale: 17.5,
       pickLng: poi.longitude,
       pickLat: poi.latitude,
+      pickCoordText: `${geo.formatCoord(poi.longitude)}, ${geo.formatCoord(poi.latitude)}`,
       geoSuggestionName: poi.name,
       geoSuggestionAddress: poi.address,
     });
@@ -387,11 +455,15 @@ Page({
     const status = e.currentTarget.dataset.status;
     if (!this.data.detailSpot) return;
     const spotId = this.data.detailSpot.id;
-    this.requireAuth('更新此刻实时安静度', () => {
-      spotsStore.updateQuietStatus(spotId, status);
-      wx.vibrateShort({ type: 'light' });
-      this.refreshSpots(spotId);
-      wx.showToast({ title: '已更新此刻安静度 ✨', icon: 'none' });
+    this.requireAuth('更新此刻实时安静度', async () => {
+      try {
+        await spotsStore.updateQuietStatus(spotId, status);
+        wx.vibrateShort({ type: 'light' });
+        this.refreshSpots(spotId);
+        wx.showToast({ title: '已更新此刻安静度 ✨', icon: 'none' });
+      } catch (err) {
+        wx.showToast({ title: err.message || '更新失败', icon: 'none' });
+      }
     });
   },
 
@@ -403,12 +475,16 @@ Page({
     const text = (this.data.reviewDraft || '').trim();
     if (!text || !this.data.detailSpot) return;
     const spotId = this.data.detailSpot.id;
-    this.requireAuth('发布校园打卡感受', () => {
+    this.requireAuth('发布校园打卡感受', async () => {
       const user = auth.getCurrentUser();
-      spotsStore.addReview(spotId, text, '被治愈到了', user ? user.nickname : '五合同学');
-      this.setData({ reviewDraft: '' });
-      this.refreshSpots(spotId);
-      wx.showToast({ title: '打卡已留存在地图上 ✨', icon: 'none' });
+      try {
+        await spotsStore.addReview(spotId, text, '被治愈到了', user ? user.nickname : '五合同学');
+        this.setData({ reviewDraft: '' });
+        this.refreshSpots(spotId);
+        wx.showToast({ title: '打卡已留存在地图上 ✨', icon: 'none' });
+      } catch (err) {
+        wx.showToast({ title: err.message || '发布打卡失败', icon: 'none' });
+      }
     });
   },
 
@@ -424,11 +500,14 @@ Page({
     });
   },
 
+  // ==================== 选点模式（支持新增地点 & 管理员重新定位已有地点） ====================
+
   onEnterPickMode() {
     this.requireAuth('标记新的校园治愈点', () => {
       this.setData(
         {
           isPickMode: true,
+          pickModePurpose: 'add',
           detailSpot: null,
           geoSuggestionName: '',
           geoSuggestionAddress: '',
@@ -440,6 +519,10 @@ Page({
   },
 
   cancelPickMode() {
+    if (this.data.pickModePurpose === 'edit') {
+      this.setData({ isPickMode: false, editModalVisible: true }, () => this.syncTabBar());
+      return;
+    }
     this.setData({ isPickMode: false });
   },
 
@@ -486,6 +569,22 @@ Page({
   },
 
   confirmPickLocation() {
+    if (this.data.pickModePurpose === 'edit') {
+      this.setData(
+        {
+          isPickMode: false,
+          editModalVisible: true,
+          editLng: this.data.pickLng,
+          editLat: this.data.pickLat,
+          editLngText: String(Number(this.data.pickLng).toFixed(6)),
+          editLatText: String(Number(this.data.pickLat).toFixed(6)),
+        },
+        () => this.syncTabBar()
+      );
+      wx.showToast({ title: '已更新待保存的地图坐标 📍', icon: 'none' });
+      return;
+    }
+
     this.setData(
       {
         addModalVisible: true,
@@ -508,20 +607,6 @@ Page({
         const tempPath = res.tempFiles && res.tempFiles[0] && res.tempFiles[0].tempFilePath;
         if (!tempPath) return;
         this.setData({ ugcCoverUrl: tempPath });
-        // 持久化到本地用户目录，避免重启小程序后临时图失效白屏
-        try {
-          const fs = wx.getFileSystemManager();
-          fs.saveFile({
-            tempFilePath: tempPath,
-            success: (saved) => {
-              if (saved && saved.savedFilePath) {
-                this.setData({ ugcCoverUrl: saved.savedFilePath });
-              }
-            },
-          });
-        } catch (e) {
-          // 降级保留临时路径
-        }
       },
     });
   },
@@ -535,39 +620,300 @@ Page({
   onUgcStar(e) { this.setData({ ugcRating: Number(e.currentTarget.dataset.star) }); },
   onUgcReason(e) { this.setData({ ugcReason: e.detail.value || '' }); },
 
-  onSubmitAddSpot() {
+  async onSubmitAddSpot() {
+    if (this.data.submittingAdd) return;
     if (!this.data.ugcName.trim() || !this.data.ugcReason.trim()) {
       wx.showToast({ title: '请填写地点名称和安利理由', icon: 'none' });
       return;
     }
+    this.setData({ submittingAdd: true });
+    try {
+      const user = auth.getCurrentUser();
+      const { created } = await spotsStore.addSpot(
+        {
+          name: this.data.ugcName.trim(),
+          category: this.data.ugcCategory,
+          longitude: this.data.pickLng,
+          latitude: this.data.pickLat,
+          coverUrl: this.data.ugcCoverUrl,
+          rating: this.data.ugcRating,
+          recommendation: this.data.ugcReason.trim(),
+        },
+        user ? user.nickname : '五合探索者'
+      );
+
+      this.setData(
+        {
+          addModalVisible: false,
+          isPickMode: false,
+          activeCategory: 'all',
+          ugcName: '',
+          ugcReason: '',
+          mapLng: created.longitude,
+          mapLat: created.latitude,
+        },
+        () => this.syncTabBar()
+      );
+      this.refreshSpots(created.id);
+      wx.vibrateLong();
+      wx.showToast({ title: `🎉 已点亮「${created.name}」`, icon: 'none' });
+    } catch (err) {
+      wx.showToast({ title: err.message || '发布地点失败', icon: 'none' });
+    } finally {
+      this.setData({ submittingAdd: false });
+    }
+  },
+
+  // ==================== 管理员专属：编辑/重新定位/删除地图地点 & 打卡评论 ====================
+
+  prepareEditSpotData(spot, enterPickImmediately = false) {
+    const baseData = {
+      detailSpot: null,
+      editSpotId: spot.id,
+      editCoverUrl: spot.coverUrl || spotsStore.PRESET_PHOTOS[0].url,
+      editName: spot.name || '',
+      editCategory: spot.category || 'sunset',
+      editRating: Math.round(Number(spot.rating || 5)),
+      editQuietStatus: spot.quietStatus || 'very_quiet',
+      editLng: Number(spot.longitude),
+      editLat: Number(spot.latitude),
+      editLngText: String(spot.longitude),
+      editLatText: String(spot.latitude),
+      editAuthorName: spot.authorName || '五合探索者',
+      editTagsText: (spot.tags || []).join('，'),
+      editReason: spot.recommendation || '',
+    };
+
+    if (enterPickImmediately) {
+      this.setData(
+        {
+          ...baseData,
+          editModalVisible: false,
+          isPickMode: true,
+          pickModePurpose: 'edit',
+          mapLng: Number(spot.longitude),
+          mapLat: Number(spot.latitude),
+          mapScale: 17.5,
+          geoSuggestionName: spot.name,
+        },
+        () => this.syncTabBar()
+      );
+      this.updatePickCoords(Number(spot.longitude), Number(spot.latitude));
+      return;
+    }
+
+    this.setData({ ...baseData, editModalVisible: true }, () => this.syncTabBar());
+  },
+
+  openEditSpot(e) {
     const user = auth.getCurrentUser();
-    const { created } = spotsStore.addSpot(
-      {
-        name: this.data.ugcName.trim(),
-        category: this.data.ugcCategory,
-        longitude: this.data.pickLng,
-        latitude: this.data.pickLat,
-        coverUrl: this.data.ugcCoverUrl,
-        rating: this.data.ugcRating,
-        recommendation: this.data.ugcReason.trim(),
-      },
-      user ? user.nickname : '五合探索者'
-    );
+    if (!auth.isAdmin(user)) return;
+    const id =
+      (e && e.currentTarget && e.currentTarget.dataset.id) ||
+      (this.data.detailSpot && this.data.detailSpot.id);
+    const spot = this.data.allSpots.find((s) => s.id === id);
+    if (!spot) return;
+    wx.vibrateShort({ type: 'light' });
+    this.prepareEditSpotData(spot, false);
+  },
+
+  closeEditModal() {
+    this.setData({ editModalVisible: false }, () => this.syncTabBar());
+  },
+
+  onStartRepositionSpot() {
+    const lng = parseFloat(this.data.editLngText);
+    const lat = parseFloat(this.data.editLatText);
+    const targetLng = Number.isFinite(lng) ? lng : this.data.editLng;
+    const targetLat = Number.isFinite(lat) ? lat : this.data.editLat;
 
     this.setData(
       {
-        addModalVisible: false,
-        isPickMode: false,
-        activeCategory: 'all',
-        ugcName: '',
-        ugcReason: '',
-        mapLng: created.longitude,
-        mapLat: created.latitude,
+        editModalVisible: false,
+        isPickMode: true,
+        pickModePurpose: 'edit',
+        mapLng: targetLng,
+        mapLat: targetLat,
+        mapScale: 17.5,
+        geoSuggestionName: this.data.editName || '拖动地图对准新位置',
       },
       () => this.syncTabBar()
     );
-    this.refreshSpots(created.id);
-    wx.vibrateLong();
-    wx.showToast({ title: `🎉 已点亮「${created.name}」`, icon: 'none' });
+    this.updatePickCoords(targetLng, targetLat);
+  },
+
+  onChooseEditPhoto() {
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sizeType: ['compressed'],
+      success: (res) => {
+        const tempPath = res.tempFiles && res.tempFiles[0] && res.tempFiles[0].tempFilePath;
+        if (tempPath) this.setData({ editCoverUrl: tempPath });
+      },
+    });
+  },
+
+  onSelectEditPresetPhoto(e) { this.setData({ editCoverUrl: e.currentTarget.dataset.url }); },
+  onEditName(e) { this.setData({ editName: e.detail.value || '' }); },
+  onEditCat(e) { this.setData({ editCategory: e.currentTarget.dataset.id }); },
+  onEditStar(e) { this.setData({ editRating: Number(e.currentTarget.dataset.star) }); },
+  onEditQuiet(e) { this.setData({ editQuietStatus: e.currentTarget.dataset.status }); },
+  onEditLngText(e) { this.setData({ editLngText: e.detail.value || '' }); },
+  onEditLatText(e) { this.setData({ editLatText: e.detail.value || '' }); },
+  onEditAuthor(e) { this.setData({ editAuthorName: e.detail.value || '' }); },
+  onEditTags(e) { this.setData({ editTagsText: e.detail.value || '' }); },
+  onEditReason(e) { this.setData({ editReason: e.detail.value || '' }); },
+
+  async onSubmitEditSpot() {
+    if (this.data.savingEdit) return;
+    const name = (this.data.editName || '').trim();
+    const reason = (this.data.editReason || '').trim();
+    const lng = parseFloat(this.data.editLngText);
+    const lat = parseFloat(this.data.editLatText);
+
+    if (!name || !reason) {
+      wx.showToast({ title: '请填写地点名称和安利理由', icon: 'none' });
+      return;
+    }
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
+      wx.showToast({ title: '经纬度格式无效', icon: 'none' });
+      return;
+    }
+
+    this.setData({ savingEdit: true });
+    try {
+      const { spot } = await spotsStore.updateSpot(this.data.editSpotId, {
+        name,
+        category: this.data.editCategory,
+        longitude: lng,
+        latitude: lat,
+        coverUrl: this.data.editCoverUrl,
+        quietStatus: this.data.editQuietStatus,
+        rating: this.data.editRating,
+        recommendation: reason,
+        tags: this.data.editTagsText,
+        authorName: this.data.editAuthorName,
+      });
+
+      const nextCat =
+        this.data.activeCategory !== 'all' && this.data.activeCategory !== this.data.editCategory
+          ? 'all'
+          : this.data.activeCategory;
+      this.setData(
+        {
+          editModalVisible: false,
+          isPickMode: false,
+          activeCategory: nextCat,
+          mapLng: spot ? spot.longitude : lng,
+          mapLat: spot ? spot.latitude : lat,
+        },
+        () => this.syncTabBar()
+      );
+      this.refreshSpots(this.data.editSpotId);
+      wx.vibrateShort({ type: 'medium' });
+      wx.showToast({ title: `已更新地点「${name}」 ✨`, icon: 'none' });
+    } catch (err) {
+      wx.showToast({ title: err.message || '保存失败', icon: 'none' });
+    } finally {
+      this.setData({ savingEdit: false });
+    }
+  },
+
+  onDeleteSpot(e) {
+    const user = auth.getCurrentUser();
+    if (!auth.isAdmin(user)) return;
+    const id =
+      (e && e.currentTarget && e.currentTarget.dataset.id) ||
+      this.data.editSpotId ||
+      (this.data.detailSpot && this.data.detailSpot.id);
+    const spot = this.data.allSpots.find((s) => s.id === id);
+    if (!spot) return;
+
+    wx.showModal({
+      title: '删除地图地点',
+      content: `确认永久删除「${spot.name}」及其所有打卡评论吗？`,
+      confirmColor: '#FF3B30',
+      success: async (r) => {
+        if (!r.confirm) return;
+        try {
+          await spotsStore.deleteSpot(id);
+          this.setData({ detailSpot: null, editModalVisible: false }, () => this.syncTabBar());
+          this.refreshSpots();
+          wx.showToast({ title: '已删除该地点', icon: 'none' });
+        } catch (err) {
+          wx.showToast({ title: err.message || '删除失败', icon: 'none' });
+        }
+      },
+    });
+  },
+
+  openEditReview(e) {
+    const user = auth.getCurrentUser();
+    if (!auth.isAdmin(user) || !this.data.detailSpot) return;
+    const revId = e.currentTarget.dataset.id;
+    const rev = (this.data.detailSpot.reviews || []).find((r) => r.id === revId);
+    if (!rev) return;
+    this.setData(
+      {
+        editReviewVisible: true,
+        editReviewSpotId: this.data.detailSpot.id,
+        editReviewId: rev.id,
+        editReviewAuthor: rev.author || '',
+        editReviewMood: rev.moodTag || '被治愈到了',
+        editReviewContent: rev.content || '',
+      },
+      () => this.syncTabBar()
+    );
+  },
+
+  closeEditReview() {
+    this.setData({ editReviewVisible: false }, () => this.syncTabBar());
+  },
+
+  onEditRevAuthor(e) { this.setData({ editReviewAuthor: e.detail.value || '' }); },
+  onEditRevMood(e) { this.setData({ editReviewMood: e.detail.value || '' }); },
+  onEditRevContent(e) { this.setData({ editReviewContent: e.detail.value || '' }); },
+
+  async onSubmitEditReview() {
+    const content = (this.data.editReviewContent || '').trim();
+    if (!content) {
+      wx.showToast({ title: '打卡内容不能为空', icon: 'none' });
+      return;
+    }
+    try {
+      await spotsStore.updateReview(this.data.editReviewSpotId, this.data.editReviewId, {
+        author: this.data.editReviewAuthor,
+        moodTag: this.data.editReviewMood,
+        content,
+      });
+      this.setData({ editReviewVisible: false }, () => this.syncTabBar());
+      this.refreshSpots(this.data.editReviewSpotId);
+      wx.showToast({ title: '打卡内容已更新 ✨', icon: 'none' });
+    } catch (err) {
+      wx.showToast({ title: err.message || '更新失败', icon: 'none' });
+    }
+  },
+
+  onDeleteReview(e) {
+    const user = auth.getCurrentUser();
+    if (!auth.isAdmin(user) || !this.data.detailSpot) return;
+    const revId = e.currentTarget.dataset.id;
+    const spotId = this.data.detailSpot.id;
+    wx.showModal({
+      title: '删除打卡记录',
+      content: '确认删除这条用户打卡吗？',
+      confirmColor: '#FF3B30',
+      success: async (r) => {
+        if (!r.confirm) return;
+        try {
+          await spotsStore.deleteReview(spotId, revId);
+          this.refreshSpots(spotId);
+          wx.showToast({ title: '已删除打卡', icon: 'none' });
+        } catch (err) {
+          wx.showToast({ title: err.message || '删除失败', icon: 'none' });
+        }
+      },
+    });
   },
 });

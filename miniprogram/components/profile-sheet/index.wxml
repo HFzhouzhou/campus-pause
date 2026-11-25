@@ -13,6 +13,21 @@
     <form class="sheet-form" bindsubmit="onSave">
       <scroll-view scroll-y class="sheet-scroll">
         <view class="sheet-inner">
+          <!-- 超级管理员 / 管理员专属控制台入口 -->
+          <view
+            wx:if="{{user.isAdmin}}"
+            class="admin-entry-card {{user.isSuperAdmin ? 'admin-entry-super' : ''}}"
+            hover-class="tap-active"
+            bindtap="onOpenAdminConsole"
+          >
+            <view class="admin-entry-left">
+              <view class="admin-entry-badge">{{user.isSuperAdmin ? '👑 超级管理员' : '🛡️ 管理员'}}</view>
+              <text class="admin-entry-title">{{user.isSuperAdmin ? '进入超级管理控制台' : '进入内容管理后台'}}</text>
+              <text class="admin-entry-sub">{{user.isSuperAdmin ? '编辑全站地图地点、用户内容 · 新增与管理其他管理员' : '编辑与管理全站地图地点、打卡、泡泡与搭子内容'}}</text>
+            </view>
+            <view class="admin-entry-arrow">›</view>
+          </view>
+
           <view class="avatar-section">
             <button
               class="avatar-picker-btn"
@@ -52,11 +67,83 @@
             />
           </view>
 
+          <!-- 账号身份与微信/邮箱双向绑定卡片 -->
           <view class="info-box">
             <view class="info-row">
-              <text class="info-k">登录方式</text>
-              <text class="info-v">{{user.email || '微信一键授权账号'}}</text>
+              <text class="info-k">账号身份</text>
+              <text class="info-v {{user.isSuperAdmin ? 'role-v-super' : user.isAdmin ? 'role-v-admin' : ''}}">{{user.roleLabel || '普通用户'}}</text>
             </view>
+
+            <view class="info-row info-row-action">
+              <view class="info-left">
+                <text class="info-k">微信一键登录</text>
+                <text class="info-hint">{{user.wxBound ? '已绑定，下次可直接微信一键登录' : (user.isAdmin ? '绑定后可直接用微信一键直登管理账号' : '绑定后支持微信一键登录')}}</text>
+              </view>
+              <view wx:if="{{user.wxBound}}" class="bind-right">
+                <text class="bound-tag">✓ 已绑定</text>
+                <text
+                  wx:if="{{user.email}}"
+                  class="unbind-link"
+                  bindtap="onUnbindWeChat"
+                >解绑</text>
+              </view>
+              <view
+                wx:else
+                class="bind-wx-btn {{bindingWx ? 'ios-btn-disabled' : ''}}"
+                hover-class="tap-active"
+                bindtap="onBindWeChat"
+              >{{bindingWx ? '绑定中…' : '一键绑定微信'}}</view>
+            </view>
+
+            <view class="info-row info-row-action">
+              <view class="info-left">
+                <text class="info-k">绑定邮箱</text>
+                <text class="info-hint">{{user.email || '未绑定（绑定管理员邮箱可自动继承权限）'}}</text>
+              </view>
+              <text wx:if="{{user.email}}" class="bound-tag">✓ 已绑定</text>
+              <view
+                wx:else
+                class="bind-email-btn"
+                hover-class="tap-active"
+                bindtap="onToggleBindEmail"
+              >{{bindEmailOpen ? '收起' : '绑定邮箱'}}</view>
+            </view>
+
+            <!-- 微信登录用户内联绑定邮箱验证码面板 -->
+            <view wx:if="{{bindEmailOpen && !user.email}}" class="bind-email-panel">
+              <input
+                type="text"
+                class="bind-input"
+                value="{{bindEmailVal}}"
+                placeholder="输入要绑定的邮箱（如 m7736097132@163.com）"
+                placeholder-style="color: #94A3B8;"
+                bindinput="onBindEmailInput"
+              />
+              <view class="bind-code-row">
+                <input
+                  type="number"
+                  maxlength="6"
+                  class="bind-input bind-code-input"
+                  value="{{bindCodeVal}}"
+                  placeholder="6 位邮箱验证码"
+                  placeholder-style="color: #94A3B8;"
+                  bindinput="onBindCodeInput"
+                />
+                <view
+                  class="bind-send-btn {{(sendingBindCode || bindCountdown > 0 || !bindEmailVal) ? 'ios-btn-disabled' : ''}}"
+                  hover-class="tap-active"
+                  bindtap="onSendBindCode"
+                >{{sendingBindCode ? '发送中' : bindCountdown > 0 ? bindCountdown + 's' : '获取验证码'}}</view>
+              </view>
+              <view
+                class="bind-confirm-btn {{(submittingBindEmail || !bindEmailVal || bindCodeVal.length < 6) ? 'ios-btn-disabled' : ''}}"
+                hover-class="tap-active"
+                bindtap="onConfirmBindEmail"
+              >{{submittingBindEmail ? '绑定中…' : '验证并绑定邮箱'}}</view>
+            </view>
+
+            <view wx:if="{{bindError}}" class="bind-error-text">{{bindError}}</view>
+
             <view class="info-row">
               <text class="info-k">所在校区</text>
               <text class="info-v">{{user.schoolName || '广西外国语学院（五合校区）'}}</text>

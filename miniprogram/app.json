@@ -3,7 +3,8 @@
     "pages/map/map",
     "pages/vent/vent",
     "pages/microstep/microstep",
-    "pages/buddy/buddy"
+    "pages/buddy/buddy",
+    "pages/admin/admin"
   ],
   "window": {
     "backgroundTextStyle": "dark",

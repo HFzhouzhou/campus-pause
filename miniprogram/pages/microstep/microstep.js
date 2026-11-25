@@ -61,6 +61,14 @@ Page({
   onShow() {
     this.syncTabBar();
     this.setData({ user: auth.getCurrentUser() });
+    auth.refreshCurrentUser().then((fresh) => {
+      if (fresh) this.setData({ user: fresh });
+    });
+  },
+
+  openAdminConsole() {
+    wx.vibrateShort({ type: 'light' });
+    wx.navigateTo({ url: '/pages/admin/admin' });
   },
 
   onUnload() {

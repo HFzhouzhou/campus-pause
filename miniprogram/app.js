@@ -8,6 +8,7 @@ App({
     menuRightSpace: 100,
     navBarTotalHeight: 68,
     user: null,
+    pendingEditSpot: null,
   },
 
   onLaunch() {
@@ -39,5 +40,8 @@ App({
     }
 
     this.globalData.user = auth.getCurrentUser();
+    auth.refreshCurrentUser(true).then((fresh) => {
+      if (fresh) this.globalData.user = fresh;
+    });
   },
 });

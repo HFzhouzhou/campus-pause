@@ -18,13 +18,92 @@ function requestApi(path, method = 'GET', data = {}, token = '') {
           resolve(res.data || {});
         } else {
           const msg = (res.data && res.data.message) || `请求失败 (${res.statusCode})`;
-          reject(new Error(msg));
+          const err = new Error(msg);
+          err.statusCode = res.statusCode;
+          reject(err);
         }
       },
       fail(err) {
-        reject(new Error(err.errMsg || '网络连接失败，请检查网络或合法域名配置'));
+        const error = new Error(err.errMsg || '网络连接失败，请检查网络或合法域名配置');
+        error.statusCode = 0;
+        reject(error);
       },
     });
+  });
+}
+
+/**
+ * 仅在后端接口尚未部署 (404) 或离线/网关不可达 (0 / >=502) 时允许降级本地缓存；
+ * 400 / 401 / 403 / 409 / 429 等权限与业务校验错误绝不绕过！
+ */
+function isFallbackableError(err) {
+  if (!err) return false;
+  const code = Number(err.statusCode || 0);
+  return code === 0 || code === 404 || code >= 502;
+}
+
+/**
+ * 将本地选择的地点实拍图上传到服务器持久化，换取永久 HTTPS 链接；
+ * 若后端尚未开启 /uploads/image，降级保存到小程序本地用户目录
+ */
+function uploadSpotImage(tempFilePath, token = '') {
+  return new Promise((resolve) => {
+    if (
+      !tempFilePath ||
+      tempFilePath.startsWith('/assets/') ||
+      tempFilePath.startsWith('https://')
+    ) {
+      resolve(tempFilePath || '/assets/spots/sunset.png');
+      return;
+    }
+
+    const fallbackSaveLocal = () => {
+      try {
+        const fs = wx.getFileSystemManager();
+        fs.saveFile({
+          tempFilePath,
+          success: (saved) => resolve((saved && saved.savedFilePath) || tempFilePath),
+          fail: () => resolve(tempFilePath),
+        });
+      } catch (e) {
+        resolve(tempFilePath);
+      }
+    };
+
+    if (!token) {
+      fallbackSaveLocal();
+      return;
+    }
+
+    try {
+      const fs = wx.getFileSystemManager();
+      fs.readFile({
+        filePath: tempFilePath,
+        encoding: 'base64',
+        async success(res) {
+          try {
+            const uploaded = await requestApi(
+              '/uploads/image',
+              'POST',
+              { base64: res.data },
+              token
+            );
+            if (uploaded && uploaded.url) {
+              resolve(uploaded.url);
+              return;
+            }
+            fallbackSaveLocal();
+          } catch (e) {
+            fallbackSaveLocal();
+          }
+        },
+        fail() {
+          fallbackSaveLocal();
+        },
+      });
+    } catch (e) {
+      fallbackSaveLocal();
+    }
   });
 }
 
@@ -124,6 +203,8 @@ function reverseGeocode(longitude, latitude) {
 
 module.exports = {
   requestApi,
+  isFallbackableError,
+  uploadSpotImage,
   searchCampusPoi,
   reverseGeocode,
 };

@@ -14,6 +14,7 @@ Page({
     profileVisible: false,
 
     quickTags: ventStore.QUICK_VENT_TAGS,
+    bubbleTones: ventStore.BUBBLE_TONES,
     ventText: '',
     shouting: false,
     shoutPercent: 0,
@@ -28,6 +29,15 @@ Page({
     holdingBubbleId: '',
     holdProgress: 0,
     burstBubbleId: '',
+
+    // 管理员编辑/新增共鸣泡泡弹窗
+    bubbleEditVisible: false,
+    editBubbleId: '',
+    editBubbleTag: '',
+    editBubbleTone: 'lavender',
+    editBubbleAuthor: '',
+    editBubbleContent: '',
+    savingBubble: false,
   },
 
   onLoad() {
@@ -40,16 +50,23 @@ Page({
       user: auth.getCurrentUser(),
       bubbles: ventStore.getBubbles(),
     });
+    this.syncServerBubbles();
   },
 
   onShow() {
     this.syncTabBar();
     this.setData({ user: auth.getCurrentUser() });
+    auth.refreshCurrentUser().then((fresh) => {
+      if (fresh) this.setData({ user: fresh });
+    });
+    this.syncServerBubbles();
   },
 
   onUnload() {
     this.clearAllTimers();
   },
+
+  noop() {},
 
   clearAllTimers() {
     if (this._shoutTimer) clearInterval(this._shoutTimer);
@@ -60,10 +77,27 @@ Page({
   syncTabBar() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       const hasModal = Boolean(
-        this.data.authVisible || this.data.profileVisible || this.data.shredding
+        this.data.authVisible ||
+          this.data.profileVisible ||
+          this.data.shredding ||
+          this.data.bubbleEditVisible
       );
       this.getTabBar().setData({ selected: 1, hidden: hasModal });
     }
+  },
+
+  async syncServerBubbles() {
+    try {
+      const { list } = await ventStore.syncFromServer();
+      this.setData({ bubbles: list });
+    } catch (e) {
+      // 保留本地缓存
+    }
+  },
+
+  openAdminConsole() {
+    wx.vibrateShort({ type: 'light' });
+    wx.navigateTo({ url: '/pages/admin/admin?tab=bubbles' });
   },
 
   requireAuth(reason, action) {
@@ -195,7 +229,6 @@ Page({
     if (this._bubbleDelay) clearTimeout(this._bubbleDelay);
     if (this._bubbleTimer) clearInterval(this._bubbleTimer);
 
-    // 延迟 180ms 再启动蓄力，避免正常上下滑动页面时误触发！
     this._bubbleDelay = setTimeout(() => {
       if (this._touchMoved) return;
       this._chargingStarted = true;
@@ -251,6 +284,116 @@ Page({
     this.requireAuth('点亮情绪同感', () => {
       wx.vibrateShort({ type: 'light' });
       this.setData({ bubbles: ventStore.toggleEmpathy(id) });
+    });
+  },
+
+  // ==================== 管理员专属：新增/编辑/删除共鸣泡泡 ====================
+
+  openAddBubble() {
+    const user = auth.getCurrentUser();
+    if (!auth.isAdmin(user)) return;
+    this.setData(
+      {
+        bubbleEditVisible: true,
+        editBubbleId: '',
+        editBubbleTag: '校园日常',
+        editBubbleTone: 'lavender',
+        editBubbleAuthor: '五合匿名泡泡',
+        editBubbleContent: '',
+      },
+      () => this.syncTabBar()
+    );
+  },
+
+  openEditBubble(e) {
+    const user = auth.getCurrentUser();
+    if (!auth.isAdmin(user)) return;
+    if (this._bubbleDelay) clearTimeout(this._bubbleDelay);
+    if (this._bubbleTimer) clearInterval(this._bubbleTimer);
+    const id = e.currentTarget.dataset.id;
+    const b = this.data.bubbles.find((item) => item.id === id);
+    if (!b) return;
+    wx.vibrateShort({ type: 'light' });
+    this.setData(
+      {
+        holdingBubbleId: '',
+        holdProgress: 0,
+        bubbleEditVisible: true,
+        editBubbleId: b.id,
+        editBubbleTag: b.tag || '',
+        editBubbleTone: b.tone || 'lavender',
+        editBubbleAuthor: b.authorName || '五合匿名泡泡',
+        editBubbleContent: b.content || '',
+      },
+      () => this.syncTabBar()
+    );
+  },
+
+  closeBubbleEdit() {
+    this.setData({ bubbleEditVisible: false }, () => this.syncTabBar());
+  },
+
+  onEditBubbleTag(e) { this.setData({ editBubbleTag: e.detail.value || '' }); },
+  onEditBubbleTone(e) { this.setData({ editBubbleTone: e.currentTarget.dataset.tone }); },
+  onEditBubbleAuthor(e) { this.setData({ editBubbleAuthor: e.detail.value || '' }); },
+  onEditBubbleContent(e) { this.setData({ editBubbleContent: e.detail.value || '' }); },
+
+  async onSaveBubbleEdit() {
+    if (this.data.savingBubble) return;
+    const content = (this.data.editBubbleContent || '').trim();
+    if (!content) {
+      wx.showToast({ title: '泡泡内容不能为空', icon: 'none' });
+      return;
+    }
+    this.setData({ savingBubble: true });
+    try {
+      let res;
+      if (this.data.editBubbleId) {
+        res = await ventStore.updateBubble(this.data.editBubbleId, {
+          content,
+          tag: this.data.editBubbleTag || '低电量时刻',
+          tone: this.data.editBubbleTone,
+          authorName: this.data.editBubbleAuthor || '五合匿名泡泡',
+        });
+      } else {
+        res = await ventStore.addBubble({
+          content,
+          tag: this.data.editBubbleTag || '校园日常',
+          tone: this.data.editBubbleTone,
+          authorName: this.data.editBubbleAuthor || '五合匿名泡泡',
+        });
+      }
+      this.setData({ bubbles: res.list || [], bubbleEditVisible: false }, () =>
+        this.syncTabBar()
+      );
+      wx.vibrateShort({ type: 'medium' });
+      wx.showToast({ title: this.data.editBubbleId ? '泡泡已更新 ✨' : '泡泡已发布 ✨', icon: 'none' });
+    } catch (err) {
+      wx.showToast({ title: err.message || '保存失败', icon: 'none' });
+    } finally {
+      this.setData({ savingBubble: false });
+    }
+  },
+
+  onDeleteBubble() {
+    const id = this.data.editBubbleId;
+    if (!id) return;
+    wx.showModal({
+      title: '删除共鸣泡泡',
+      content: '确认永久删除这条共鸣泡泡吗？',
+      confirmColor: '#FF3B30',
+      success: async (r) => {
+        if (!r.confirm) return;
+        try {
+          const res = await ventStore.deleteBubble(id);
+          this.setData({ bubbles: res.list || [], bubbleEditVisible: false }, () =>
+            this.syncTabBar()
+          );
+          wx.showToast({ title: '泡泡已删除', icon: 'none' });
+        } catch (err) {
+          wx.showToast({ title: err.message || '删除失败', icon: 'none' });
+        }
+      },
     });
   },
 });

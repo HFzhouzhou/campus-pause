@@ -4,8 +4,18 @@
     <view wx:if="{{user}}" class="liquid-dock account-pill" hover-class="tap-active" bindtap="openProfile">
       <image class="account-avatar" src="{{user.avatarUrl}}" mode="aspectFill" />
       <text class="account-name">{{user.nickname}}</text>
+      <text wx:if="{{user.shortRoleBadge}}" class="role-tag-mini {{user.isSuperAdmin ? 'role-tag-super' : 'role-tag-admin'}}">{{user.shortRoleBadge}}</text>
     </view>
     <view wx:else class="liquid-dock account-pill-guest" hover-class="tap-active" bindtap="openAuthManual">登录</view>
+
+    <view
+      wx:if="{{user && user.isAdmin}}"
+      class="liquid-dock admin-nav-pill {{user.isSuperAdmin ? 'admin-nav-pill-super' : ''}}"
+      hover-class="tap-active"
+      bindtap="openAdminConsole"
+    >
+      <text>{{user.isSuperAdmin ? '👑 超管' : '🛡️ 管理'}}</text>
+    </view>
   </view>
 
   <view class="page-head-block">
@@ -45,6 +55,13 @@
           <text>{{item.isExpired ? '已自动解散' : '剩 ' + item.remainingText}}</text>
         </view>
         <view class="card-badges">
+          <view
+            wx:if="{{user && user.isAdmin}}"
+            class="buddy-admin-btn"
+            hover-class="tap-active"
+            data-id="{{item.id}}"
+            bindtap="openEditBuddy"
+          >✎ 编辑</view>
           <text wx:if="{{item.isSilent}}" class="silent-pill">可静音</text>
           <text class="count-pill">{{item.joinedCount}}/{{item.maxPeople}} 人</text>
         </view>
@@ -126,6 +143,10 @@
             >
               <text class="chat-meta">{{item.sender}} · {{item.time}}</text>
               <view class="chat-bubble {{item.isMe ? 'bubble-me' : 'bubble-other'}}">{{item.text}}</view>
+              <view wx:if="{{user && user.isAdmin}}" class="chat-admin-ops">
+                <text class="chat-adm-edit" data-id="{{item.id}}" bindtap="openEditMsg">编辑</text>
+                <text class="chat-adm-del" data-id="{{item.id}}" bindtap="onDeleteMsg">删除</text>
+              </view>
             </view>
           </view>
         </view>
@@ -247,7 +268,119 @@
 
       <view class="sheet-footer">
         <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="closeCreate">取消</view>
-        <view class="ios-btn ios-btn-primary flex-15" hover-class="tap-active" bindtap="onSubmitCreate">发布限时搭子</view>
+        <view class="ios-btn ios-btn-primary flex-15 {{submittingCreate ? 'ios-btn-disabled' : ''}}" hover-class="tap-active" bindtap="onSubmitCreate">
+          {{submittingCreate ? '发布中…' : '发布限时搭子'}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 3) 管理员编辑用户搭子 Sheet -->
+  <view wx:if="{{editVisible}}" class="sheet-mask" bindtap="closeEditBuddy">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view class="header-text-wrap">
+          <view class="sheet-title">管理员编辑限时搭子</view>
+          <view class="sheet-subtitle">修改用户发布的搭子信息或删除该搭子</view>
+        </view>
+        <view class="sheet-close" hover-class="tap-active" bindtap="closeEditBuddy">✕</view>
+      </view>
+
+      <scroll-view scroll-y class="sheet-scroll">
+        <view class="sheet-inner">
+          <view class="form-group">
+            <text class="form-label">活动名称 *</text>
+            <input class="form-input" value="{{eTitle}}" maxlength="40" bindinput="onETitle" />
+          </view>
+          <view class="form-group">
+            <text class="form-label">活动类型</text>
+            <view class="tag-wrap">
+              <view
+                wx:for="{{selectableCategories}}"
+                wx:key="id"
+                class="tag-chip {{eCategory === item.id ? 'tag-chip-active' : ''}}"
+                data-id="{{item.id}}"
+                bindtap="onECategory"
+              >{{item.emoji}} {{item.label}}</view>
+            </view>
+          </view>
+          <view class="form-group">
+            <text class="form-label">校园集合点 *</text>
+            <input class="form-input" value="{{eLocation}}" maxlength="50" bindinput="onELocation" />
+          </view>
+          <view class="form-group">
+            <text class="form-label">接头暗号</text>
+            <input class="form-input" value="{{eCipher}}" maxlength="40" bindinput="onECipher" />
+          </view>
+          <view class="form-group">
+            <text class="form-label">发起人昵称</text>
+            <input class="form-input" value="{{eHostAlias}}" maxlength="24" bindinput="onEHost" />
+          </view>
+
+          <view class="seg-grid">
+            <view class="seg-col">
+              <text class="form-label">限时时长</text>
+              <view class="seg-box">
+                <view wx:for="{{[20,30,45]}}" wx:key="*this" class="seg-item {{eDuration === item ? 'seg-active' : ''}}" data-val="{{item}}" bindtap="onEDuration">{{item}}m</view>
+              </view>
+            </view>
+            <view class="seg-col">
+              <text class="form-label">人数上限</text>
+              <view class="seg-box">
+                <view wx:for="{{[2,3,4]}}" wx:key="*this" class="seg-item {{eMaxPeople === item ? 'seg-active' : ''}}" data-val="{{item}}" bindtap="onEMaxPeople">{{item}}人</view>
+              </view>
+            </view>
+          </view>
+
+          <view class="silent-switch-row">
+            <view><text class="sw-title">允许全程静音陪伴</text></view>
+            <switch checked="{{eIsSilent}}" color="#34C759" bindchange="onESilent" />
+          </view>
+
+          <view class="silent-switch-row">
+            <view><text class="sw-title">保存时重新开始倒计时</text></view>
+            <switch checked="{{eResetTimer}}" color="#007AFF" bindchange="onEResetTimer" />
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">氛围说明</text>
+            <textarea class="form-textarea" value="{{eNote}}" maxlength="140" bindinput="onENote" />
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="sheet-footer">
+        <view class="ios-btn ios-btn-danger" hover-class="tap-active" bindtap="onDeleteBuddy">删除</view>
+        <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="closeEditBuddy">取消</view>
+        <view class="ios-btn ios-btn-primary flex-15 {{savingEdit ? 'ios-btn-disabled' : ''}}" hover-class="tap-active" bindtap="onSubmitEditBuddy">
+          {{savingEdit ? '保存中…' : '保存修改'}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 4) 管理员编辑频道消息 Sheet -->
+  <view wx:if="{{editMsgVisible}}" class="sheet-mask sheet-mask-top" bindtap="closeEditMsg">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view class="sheet-title">编辑频道消息</view>
+        <view class="sheet-close" hover-class="tap-active" bindtap="closeEditMsg">✕</view>
+      </view>
+      <view class="sheet-inner">
+        <view class="form-group">
+          <text class="form-label">发送者昵称</text>
+          <input class="form-input" value="{{editMsgSender}}" maxlength="24" bindinput="onEditMsgSender" />
+        </view>
+        <view class="form-group">
+          <text class="form-label">消息内容 *</text>
+          <textarea class="form-textarea" value="{{editMsgText}}" maxlength="160" bindinput="onEditMsgText" />
+        </view>
+      </view>
+      <view class="sheet-footer">
+        <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="closeEditMsg">取消</view>
+        <view class="ios-btn ios-btn-primary flex-15" hover-class="tap-active" bindtap="onSaveEditMsg">保存修改</view>
       </view>
     </view>
   </view>

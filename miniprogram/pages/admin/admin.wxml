@@ -1,0 +1,694 @@
+<view class="ios-canvas admin-page" style="padding-top: {{menuTop}}px;">
+  <!-- 顶部返回与身份胶囊 -->
+  <view class="ios-nav-row" style="height: {{menuHeight}}px; padding-right: {{menuRightSpace}}px;">
+    <view class="liquid-dock back-pill" hover-class="tap-active" bindtap="onGoBack">
+      <text class="back-chevron">‹</text>
+      <text>返回</text>
+    </view>
+    <view wx:if="{{authorized}}" class="liquid-dock role-pill {{isSuperAdmin ? 'role-pill-super' : ''}}">
+      <text>{{isSuperAdmin ? '👑 超级管理员' : '🛡️ 管理员'}}</text>
+    </view>
+  </view>
+
+  <!-- 无权限提示 -->
+  <view wx:if="{{!authorized}}" class="ios-card denied-card">
+    <text class="denied-icon">🔒</text>
+    <text class="denied-title">仅管理员可访问管理控制台</text>
+    <text class="denied-sub">请使用超级管理员（m7736097132@163.com）或已授权管理员账号登录后再进入。</text>
+    <view class="ios-btn ios-btn-primary" hover-class="tap-active" bindtap="onGoBack">返回页面</view>
+  </view>
+
+  <block wx:else>
+    <!-- 头部总览 -->
+    <view class="page-head-block">
+      <text class="header-kicker">{{isSuperAdmin ? 'SUPER ADMIN CONSOLE' : 'ADMIN MODERATION'}}</text>
+      <text class="header-title">{{isSuperAdmin ? '超级管理控制台' : '内容管理后台'}}</text>
+      <text class="header-sub">{{user.nickname}} · {{user.email || '微信授权账号'}}</text>
+    </view>
+
+    <!-- 管理员账号微信一键绑定快捷条 -->
+    <view class="ios-card wx-bind-banner">
+      <view class="wx-bind-left">
+        <text class="wx-bind-title">{{user.wxBound ? '✓ 已绑定微信一键登录' : '未绑定微信登录账号'}}</text>
+        <text class="wx-bind-sub">{{user.wxBound ? '下次点「微信一键登录」即可直接进入当前管理员账号' : '绑定当前微信后，无需反复收验证码即可一键直登管理后台'}}</text>
+      </view>
+      <view
+        wx:if="{{!user.wxBound}}"
+        class="wx-bind-cta {{bindingWx ? 'ios-btn-disabled' : ''}}"
+        hover-class="tap-active"
+        bindtap="onBindMyWeChat"
+      >{{bindingWx ? '绑定中…' : '一键绑定微信'}}</view>
+      <view
+        wx:elif="{{user.email}}"
+        class="act-btn act-ghost"
+        hover-class="tap-active"
+        bindtap="onUnbindMyWeChat"
+      >解绑微信</view>
+    </view>
+
+    <!-- 离线/未部署后端提醒条 -->
+    <view wx:if="{{offlineMode}}" class="offline-banner">
+      <text class="offline-dot"></text>
+      <text class="offline-text">本地预览模式：当前服务端尚未部署最新管理接口，修改暂存本地；部署最新 server/auth_api.py 后即全端实时同步。</text>
+    </view>
+
+    <!-- 数据统计概览 -->
+    <view class="stats-grid">
+      <view class="ios-card stat-box">
+        <text class="stat-num">{{spots.length}}</text>
+        <text class="stat-lbl">地图地点</text>
+      </view>
+      <view class="ios-card stat-box">
+        <text class="stat-num">{{buddies.length}}</text>
+        <text class="stat-lbl">限时搭子</text>
+      </view>
+      <view class="ios-card stat-box">
+        <text class="stat-num">{{bubbles.length}}</text>
+        <text class="stat-lbl">共鸣泡泡</text>
+      </view>
+      <view class="ios-card stat-box">
+        <text class="stat-num">{{isSuperAdmin ? (admins.length + pendingGrants.length) : stats.reviewsCount}}</text>
+        <text class="stat-lbl">{{isSuperAdmin ? '管理员席位' : '打卡内容'}}</text>
+      </view>
+    </view>
+
+    <!-- 模块切换胶囊（禁用 enable-flex 保持稳定高度） -->
+    <scroll-view scroll-x class="tab-scroll" show-scrollbar="{{false}}">
+      <view
+        class="tab-pill {{activeTab === 'spots' ? 'tab-pill-active' : ''}}"
+        data-tab="spots"
+        bindtap="onSwitchTab"
+      >🗺️ 地图地点 ({{spots.length}})</view>
+      <view
+        class="tab-pill {{activeTab === 'buddies' ? 'tab-pill-active' : ''}}"
+        data-tab="buddies"
+        bindtap="onSwitchTab"
+      >🤝 限时搭子 ({{buddies.length}})</view>
+      <view
+        class="tab-pill {{activeTab === 'bubbles' ? 'tab-pill-active' : ''}}"
+        data-tab="bubbles"
+        bindtap="onSwitchTab"
+      >🫧 共鸣泡泡 ({{bubbles.length}})</view>
+      <view
+        wx:if="{{isSuperAdmin}}"
+        class="tab-pill {{activeTab === 'admins' ? 'tab-pill-super-active' : ''}}"
+        data-tab="admins"
+        bindtap="onSwitchTab"
+      >👑 管理员管理</view>
+    </scroll-view>
+
+    <!-- ==================== Tab 1：地图地点 ==================== -->
+    <block wx:if="{{activeTab === 'spots'}}">
+      <view class="search-box">
+        <input
+          class="search-inp"
+          value="{{spotQuery}}"
+          placeholder="搜索地点名称、介绍或发布者…"
+          placeholder-style="color: #94A3B8;"
+          bindinput="onSpotSearch"
+        />
+      </view>
+
+      <view wx:for="{{filteredSpots}}" wx:key="id" class="ios-card item-card">
+        <view class="spot-row">
+          <image class="spot-thumb" src="{{item.coverUrl}}" mode="aspectFill" />
+          <view class="spot-main">
+            <view class="item-head">
+              <text class="item-title">{{item.name}}</text>
+              <text class="item-tag">{{item.catEmoji}} {{item.catLabel}}</text>
+            </view>
+            <text class="item-meta">发布者：{{item.authorName || '同学'}} · ★ {{item.rating}} · {{item.quietLabel}}</text>
+            <text class="item-coord">📍 {{item.coordText}}</text>
+          </view>
+        </view>
+        <text class="item-desc">{{item.recommendation}}</text>
+
+        <view class="item-actions">
+          <view class="act-btn act-primary" hover-class="tap-active" data-id="{{item.id}}" bindtap="openEditSpot">✎ 编辑地点</view>
+          <view class="act-btn act-ghost" hover-class="tap-active" data-id="{{item.id}}" bindtap="onJumpMapReposition">📍 地图调位置</view>
+          <view class="act-btn act-ghost" hover-class="tap-active" data-id="{{item.id}}" bindtap="openSpotReviews">💬 打卡({{item.reviewCount}})</view>
+          <view class="act-btn act-danger" hover-class="tap-active" data-id="{{item.id}}" bindtap="onDeleteSpot">删除</view>
+        </view>
+      </view>
+
+      <view wx:if="{{filteredSpots.length === 0}}" class="ios-card empty-box">暂无匹配的地图地点</view>
+    </block>
+
+    <!-- ==================== Tab 2：限时搭子 ==================== -->
+    <block wx:if="{{activeTab === 'buddies'}}">
+      <view class="search-box">
+        <input
+          class="search-inp"
+          value="{{buddyQuery}}"
+          placeholder="搜索搭子标题、集合点或发起人…"
+          placeholder-style="color: #94A3B8;"
+          bindinput="onBuddySearch"
+        />
+      </view>
+
+      <view wx:for="{{filteredBuddies}}" wx:key="id" class="ios-card item-card">
+        <view class="item-head">
+          <text class="item-title">{{item.catEmoji}} {{item.title}}</text>
+          <text class="item-tag">{{item.joinedCount}}/{{item.maxPeople}}人</text>
+        </view>
+        <text class="item-meta">发起人：{{item.hostAlias}} · 集合点：{{item.location}}</text>
+        <text class="item-coord">🔑 暗号：{{item.cipher}}</text>
+        <text class="item-desc">{{item.vibeNote}}</text>
+
+        <view class="item-actions">
+          <view class="act-btn act-primary" hover-class="tap-active" data-id="{{item.id}}" bindtap="openEditBuddy">✎ 编辑搭子</view>
+          <view class="act-btn act-ghost" hover-class="tap-active" data-id="{{item.id}}" bindtap="openBuddyMessages">💬 消息({{item.msgCount}})</view>
+          <view class="act-btn act-danger" hover-class="tap-active" data-id="{{item.id}}" bindtap="onDeleteBuddy">删除</view>
+        </view>
+      </view>
+
+      <view wx:if="{{filteredBuddies.length === 0}}" class="ios-card empty-box">暂无匹配的限时搭子</view>
+    </block>
+
+    <!-- ==================== Tab 3：共鸣泡泡 ==================== -->
+    <block wx:if="{{activeTab === 'bubbles'}}">
+      <view class="add-row">
+        <view class="ios-btn ios-btn-primary" hover-class="tap-active" bindtap="openAddBubble">+ 新增共鸣泡泡</view>
+      </view>
+
+      <view wx:for="{{bubbles}}" wx:key="id" class="ios-card item-card">
+        <view class="item-head">
+          <text class="item-tag">#{{item.tag}}</text>
+          <text class="item-meta">{{item.authorName || '五合匿名泡泡'}} · {{item.createdAt}}</text>
+        </view>
+        <text class="item-desc bubble-body">{{item.content}}</text>
+        <view class="item-meta-foot">🫂 抱抱 {{item.hugs}} · ⚡ 同感 {{item.empathy}} · 色调 {{item.tone}}</view>
+
+        <view class="item-actions">
+          <view class="act-btn act-primary" hover-class="tap-active" data-id="{{item.id}}" bindtap="openEditBubble">✎ 编辑内容</view>
+          <view class="act-btn act-danger" hover-class="tap-active" data-id="{{item.id}}" bindtap="onDeleteBubble">删除</view>
+        </view>
+      </view>
+
+      <view wx:if="{{bubbles.length === 0}}" class="ios-card empty-box">暂无共鸣泡泡</view>
+    </block>
+
+    <!-- ==================== Tab 4：超级管理员专属 · 管理员管理 ==================== -->
+    <block wx:if="{{activeTab === 'admins' && isSuperAdmin}}">
+      <!-- 新增管理员卡片 -->
+      <view class="ios-card admin-form-card">
+        <view class="section-title-row">
+          <text class="sec-title">新增管理员</text>
+          <text class="sec-badge">超级管理员专属</text>
+        </view>
+        <text class="sec-hint">输入目标用户的邮箱地址即可授予管理员权限；若对方尚未注册，系统将自动预授权，首次邮箱登录立即生效。</text>
+
+        <input
+          class="form-input"
+          value="{{newAdminEmail}}"
+          placeholder="输入管理员邮箱，如 someone@163.com"
+          placeholder-style="color: #94A3B8;"
+          bindinput="onNewAdminEmail"
+        />
+        <input
+          class="form-input mt-14"
+          value="{{newAdminNote}}"
+          maxlength="40"
+          placeholder="备注说明（选填，如：地图内容审核员）"
+          placeholder-style="color: #94A3B8;"
+          bindinput="onNewAdminNote"
+        />
+        <view
+          class="ios-btn ios-btn-primary mt-18 {{addingAdmin ? 'ios-btn-disabled' : ''}}"
+          hover-class="tap-active"
+          bindtap="onAddAdminByEmail"
+        >
+          {{addingAdmin ? '处理中…' : '+ 设为管理员'}}
+        </view>
+      </view>
+
+      <!-- 当前管理员列表 -->
+      <view class="ios-card admin-list-card">
+        <view class="section-title-row">
+          <text class="sec-title">当前管理员 ({{admins.length}})</text>
+          <text class="sec-sub">可编辑全部用户内容与地图地点</text>
+        </view>
+
+        <view wx:for="{{admins}}" wx:key="uid" class="user-row">
+          <image class="user-avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+          <view class="user-info">
+            <view class="user-name-line">
+              <text class="user-name">{{item.nickname}}</text>
+              <text class="role-tag-mini {{item.isSuperAdmin ? 'role-tag-super' : 'role-tag-admin'}}">
+                {{item.isSuperAdmin ? '超级管理员' : '管理员'}}
+              </text>
+              <text class="wx-state-pill {{item.wxBound ? 'wx-state-on' : ''}}">{{item.wxBound ? '已绑微信' : '未绑微信'}}</text>
+            </view>
+            <text class="user-sub">{{item.email || '微信一键授权用户'}} · {{item.uid}}</text>
+          </view>
+          <view
+            wx:if="{{!item.isSuperAdmin && !item.isProtected}}"
+            class="act-btn act-danger"
+            hover-class="tap-active"
+            data-uid="{{item.uid}}"
+            data-email="{{item.email || ''}}"
+            data-name="{{item.nickname}}"
+            bindtap="onRevokeAdmin"
+          >撤销</view>
+          <text wx:else class="protected-lbl">最高权限</text>
+        </view>
+      </view>
+
+      <!-- 预授权待激活列表 -->
+      <view wx:if="{{pendingGrants.length > 0}}" class="ios-card admin-list-card">
+        <view class="section-title-row">
+          <text class="sec-title">待激活预授权 ({{pendingGrants.length}})</text>
+          <text class="sec-sub">首次登录自动成为管理员</text>
+        </view>
+
+        <view wx:for="{{pendingGrants}}" wx:key="email" class="user-row">
+          <view class="grant-icon">✉️</view>
+          <view class="user-info">
+            <text class="user-name">{{item.email}}</text>
+            <text class="user-sub">{{item.note || '已预授权管理员'}} · 授权人 {{item.grantedBy}}</text>
+          </view>
+          <view
+            class="act-btn act-danger"
+            hover-class="tap-active"
+            data-email="{{item.email}}"
+            data-name="{{item.email}}"
+            bindtap="onRevokeAdmin"
+          >撤销</view>
+        </view>
+      </view>
+
+      <!-- 已注册用户列表（含微信登录用户一键设为管理员） -->
+      <view class="ios-card admin-list-card">
+        <view class="section-title-row">
+          <text class="sec-title">已注册用户 ({{users.length}})</text>
+          <text class="sec-sub">支持直接任命微信或邮箱用户</text>
+        </view>
+
+        <view class="user-search-row">
+          <input
+            class="search-inp flex-1"
+            value="{{userQuery}}"
+            placeholder="搜索昵称 / 邮箱 / UID"
+            placeholder-style="color: #94A3B8;"
+            confirm-type="search"
+            bindinput="onUserQueryInput"
+            bindconfirm="onSearchUsers"
+          />
+          <view class="search-go-btn" hover-class="tap-active" bindtap="onSearchUsers">搜索</view>
+        </view>
+
+        <view wx:for="{{users}}" wx:key="uid" class="user-row">
+          <image class="user-avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+          <view class="user-info">
+            <view class="user-name-line">
+              <text class="user-name">{{item.nickname}}</text>
+              <text wx:if="{{item.isAdmin}}" class="role-tag-mini {{item.isSuperAdmin ? 'role-tag-super' : 'role-tag-admin'}}">
+                {{item.isSuperAdmin ? '超管' : '管理'}}
+              </text>
+              <text class="wx-state-pill {{item.wxBound ? 'wx-state-on' : ''}}">{{item.wxBound ? '已绑微信' : '未绑微信'}}</text>
+            </view>
+            <text class="user-sub">{{item.email || '微信一键登录'}} · {{item.uid}}</text>
+          </view>
+
+          <text wx:if="{{item.isSuperAdmin}}" class="protected-lbl">超管</text>
+          <view
+            wx:elif="{{item.isAdmin}}"
+            class="act-btn act-danger"
+            hover-class="tap-active"
+            data-uid="{{item.uid}}"
+            data-email="{{item.email || ''}}"
+            data-name="{{item.nickname}}"
+            bindtap="onRevokeAdmin"
+          >撤销管理</view>
+          <view
+            wx:else
+            class="act-btn act-primary"
+            hover-class="tap-active"
+            data-uid="{{item.uid}}"
+            data-name="{{item.nickname}}"
+            bindtap="onPromoteUser"
+          >设为管理</view>
+        </view>
+      </view>
+    </block>
+  </block>
+
+  <view class="bottom-safe"></view>
+
+  <!-- ==================== 弹窗 1：编辑地图地点 ==================== -->
+  <view wx:if="{{spotModalVisible}}" class="sheet-mask" bindtap="closeSpotModal">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view class="header-text-wrap">
+          <view class="sheet-title">编辑地图地点</view>
+          <view class="sheet-subtitle">可修改地点信息、封面与地图经纬度坐标</view>
+        </view>
+        <view class="sheet-close" hover-class="tap-active" bindtap="closeSpotModal">✕</view>
+      </view>
+
+      <scroll-view scroll-y class="sheet-scroll">
+        <view class="sheet-inner">
+          <view class="photo-box" bindtap="onChooseEditSpotPhoto">
+            <image class="photo-preview" src="{{editSpotCover}}" mode="aspectFill" />
+            <view class="photo-btn">更换实拍图</view>
+          </view>
+          <scroll-view scroll-x class="preset-scroll" show-scrollbar="{{false}}">
+            <view
+              wx:for="{{presetPhotos}}"
+              wx:key="id"
+              class="preset-chip {{editSpotCover === item.url ? 'preset-chip-active' : ''}}"
+              data-url="{{item.url}}"
+              bindtap="onPickSpotPreset"
+            >{{item.label}}</view>
+          </scroll-view>
+
+          <view class="form-group">
+            <text class="form-label">地点名称 *</text>
+            <input class="form-input" value="{{editSpotName}}" maxlength="36" bindinput="onEditSpotName" />
+          </view>
+
+          <view class="form-group">
+            <view class="coord-head">
+              <text class="form-label">地图经纬度坐标</text>
+              <view class="reposition-link" hover-class="tap-active" bindtap="onJumpMapReposition">📍 去地图拖动调位置 ›</view>
+            </view>
+            <view class="coord-grid">
+              <input class="form-input flex-1" type="digit" value="{{editSpotLng}}" placeholder="经度 Lng" bindinput="onEditSpotLng" />
+              <input class="form-input flex-1" type="digit" value="{{editSpotLat}}" placeholder="纬度 Lat" bindinput="onEditSpotLat" />
+            </view>
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">治愈分类</text>
+            <view class="tag-wrap">
+              <view
+                wx:for="{{spotCategories}}"
+                wx:key="id"
+                class="tag-chip {{editSpotCat === item.id ? 'tag-chip-active' : ''}}"
+                data-id="{{item.id}}"
+                bindtap="onEditSpotCat"
+              >{{item.emoji}} {{item.label}}</view>
+            </view>
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">此刻安静度</text>
+            <view class="seg-row">
+              <view class="seg-btn {{editSpotQuiet === 'very_quiet' ? 'seg-btn-on' : ''}}" data-status="very_quiet" bindtap="onEditSpotQuiet">很安静</view>
+              <view class="seg-btn {{editSpotQuiet === 'moderate' ? 'seg-btn-on' : ''}}" data-status="moderate" bindtap="onEditSpotQuiet">人不多</view>
+              <view class="seg-btn {{editSpotQuiet === 'crowded' ? 'seg-btn-on' : ''}}" data-status="crowded" bindtap="onEditSpotQuiet">有点吵</view>
+            </view>
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">安静指数（{{editSpotRating}} 星）</text>
+            <view class="star-row">
+              <text
+                wx:for="{{[1,2,3,4,5]}}"
+                wx:key="*this"
+                class="star-btn {{item <= editSpotRating ? 'star-on' : ''}}"
+                data-star="{{item}}"
+                bindtap="onEditSpotStar"
+              >★</text>
+            </view>
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">发布者显示名</text>
+            <input class="form-input" value="{{editSpotAuthor}}" maxlength="24" bindinput="onEditSpotAuthor" />
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">标签（逗号或空格分隔）</text>
+            <input class="form-input" value="{{editSpotTagsText}}" placeholder="欧式落日，微风连廊" bindinput="onEditSpotTags" />
+          </view>
+
+          <view class="form-group">
+            <text class="form-label">安利理由 *</text>
+            <textarea class="form-textarea" value="{{editSpotReason}}" maxlength="200" bindinput="onEditSpotReason" />
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="sheet-footer">
+        <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="closeSpotModal">取消</view>
+        <view class="ios-btn ios-btn-primary flex-15 {{savingSpot ? 'ios-btn-disabled' : ''}}" hover-class="tap-active" bindtap="onSaveEditSpot">
+          {{savingSpot ? '保存中…' : '保存修改'}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ==================== 弹窗 2：地点打卡管理 ==================== -->
+  <view wx:if="{{reviewsModalVisible && activeReviewSpot}}" class="sheet-mask" bindtap="closeReviewsModal">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view class="header-text-wrap">
+          <view class="sheet-title">管理同学打卡</view>
+          <view class="sheet-subtitle">{{activeReviewSpot.name}} · 共 {{activeReviewSpot.reviews.length}} 条</view>
+        </view>
+        <view class="sheet-close" hover-class="tap-active" bindtap="closeReviewsModal">✕</view>
+      </view>
+
+      <scroll-view scroll-y class="sheet-scroll">
+        <view class="sheet-inner">
+          <view wx:for="{{activeReviewSpot.reviews}}" wx:key="id" class="sub-item-card">
+            <view class="sub-item-top">
+              <text class="sub-author">{{item.author}}</text>
+              <text class="sub-meta">{{item.moodTag}} · {{item.createdAt}}</text>
+            </view>
+            <text class="sub-content">{{item.content}}</text>
+            <view class="sub-actions">
+              <view class="act-btn act-primary" hover-class="tap-active" data-id="{{item.id}}" bindtap="openEditReview">✎ 编辑</view>
+              <view class="act-btn act-danger" hover-class="tap-active" data-id="{{item.id}}" bindtap="onDeleteReview">删除</view>
+            </view>
+          </view>
+          <view wx:if="{{activeReviewSpot.reviews.length === 0}}" class="empty-sub">该地点暂无同学打卡</view>
+        </view>
+      </scroll-view>
+
+      <view class="sheet-footer">
+        <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="closeReviewsModal">关闭</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 弹窗 2b：编辑单条打卡 -->
+  <view wx:if="{{editReviewModalVisible}}" class="sheet-mask sheet-mask-top" bindtap="closeEditReviewModal">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view class="sheet-title">编辑打卡内容</view>
+        <view class="sheet-close" hover-class="tap-active" bindtap="closeEditReviewModal">✕</view>
+      </view>
+      <view class="sheet-inner">
+        <view class="form-group">
+          <text class="form-label">发布者昵称</text>
+          <input class="form-input" value="{{editReviewAuthor}}" maxlength="24" bindinput="onEditRevAuthor" />
+        </view>
+        <view class="form-group">
+          <text class="form-label">情绪标签</text>
+          <input class="form-input" value="{{editReviewMood}}" maxlength="20" bindinput="onEditRevMood" />
+        </view>
+        <view class="form-group">
+          <text class="form-label">打卡正文 *</text>
+          <textarea class="form-textarea" value="{{editReviewContent}}" maxlength="240" bindinput="onEditRevContent" />
+        </view>
+      </view>
+      <view class="sheet-footer">
+        <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="closeEditReviewModal">取消</view>
+        <view class="ios-btn ios-btn-primary flex-15" hover-class="tap-active" bindtap="onSaveEditReview">保存修改</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ==================== 弹窗 3：编辑限时搭子 ==================== -->
+  <view wx:if="{{buddyModalVisible}}" class="sheet-mask" bindtap="closeBuddyModal">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view class="header-text-wrap">
+          <view class="sheet-title">编辑限时搭子</view>
+          <view class="sheet-subtitle">修改用户发布的搭子标题、集合点、暗号与说明</view>
+        </view>
+        <view class="sheet-close" hover-class="tap-active" bindtap="closeBuddyModal">✕</view>
+      </view>
+
+      <scroll-view scroll-y class="sheet-scroll">
+        <view class="sheet-inner">
+          <view class="form-group">
+            <text class="form-label">活动标题 *</text>
+            <input class="form-input" value="{{editBuddyTitle}}" maxlength="40" bindinput="onEditBTitle" />
+          </view>
+          <view class="form-group">
+            <text class="form-label">活动类型</text>
+            <view class="tag-wrap">
+              <view
+                wx:for="{{buddyCategories}}"
+                wx:key="id"
+                class="tag-chip {{editBuddyCat === item.id ? 'tag-chip-active' : ''}}"
+                data-id="{{item.id}}"
+                bindtap="onEditBCat"
+              >{{item.emoji}} {{item.label}}</view>
+            </view>
+          </view>
+          <view class="form-group">
+            <text class="form-label">校园集合点 *</text>
+            <input class="form-input" value="{{editBuddyLocation}}" maxlength="50" bindinput="onEditBLoc" />
+          </view>
+          <view class="form-group">
+            <text class="form-label">接头暗号</text>
+            <input class="form-input" value="{{editBuddyCipher}}" maxlength="40" bindinput="onEditBCipher" />
+          </view>
+          <view class="form-group">
+            <text class="form-label">发起人昵称</text>
+            <input class="form-input" value="{{editBuddyHost}}" maxlength="24" bindinput="onEditBHost" />
+          </view>
+          <view class="seg-grid">
+            <view class="flex-1">
+              <text class="form-label">时长</text>
+              <view class="seg-row">
+                <view wx:for="{{[20,30,45]}}" wx:key="*this" class="seg-btn {{editBuddyDuration === item ? 'seg-btn-on' : ''}}" data-val="{{item}}" bindtap="onEditBDuration">{{item}}m</view>
+              </view>
+            </view>
+            <view class="flex-1">
+              <text class="form-label">人数上限</text>
+              <view class="seg-row">
+                <view wx:for="{{[2,3,4]}}" wx:key="*this" class="seg-btn {{editBuddyMaxPeople === item ? 'seg-btn-on' : ''}}" data-val="{{item}}" bindtap="onEditBMax">{{item}}人</view>
+              </view>
+            </view>
+          </view>
+          <view class="switch-row">
+            <text class="switch-lbl">允许全程静音陪伴</text>
+            <switch checked="{{editBuddySilent}}" color="#34C759" bindchange="onEditBSilent" />
+          </view>
+          <view class="switch-row">
+            <text class="switch-lbl">保存时重置倒计时（重新计时）</text>
+            <switch checked="{{editBuddyResetTimer}}" color="#007AFF" bindchange="onEditBReset" />
+          </view>
+          <view class="form-group">
+            <text class="form-label">氛围说明</text>
+            <textarea class="form-textarea" value="{{editBuddyNote}}" maxlength="140" bindinput="onEditBNote" />
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="sheet-footer">
+        <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="closeBuddyModal">取消</view>
+        <view class="ios-btn ios-btn-primary flex-15 {{savingBuddy ? 'ios-btn-disabled' : ''}}" hover-class="tap-active" bindtap="onSaveEditBuddy">
+          {{savingBuddy ? '保存中…' : '保存修改'}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ==================== 弹窗 4：搭子频道消息管理 ==================== -->
+  <view wx:if="{{messagesModalVisible && activeMsgBuddy}}" class="sheet-mask" bindtap="closeMessagesModal">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view class="header-text-wrap">
+          <view class="sheet-title">管理频道消息</view>
+          <view class="sheet-subtitle">{{activeMsgBuddy.title}} · 共 {{activeMsgBuddy.quickMessages.length}} 条</view>
+        </view>
+        <view class="sheet-close" hover-class="tap-active" bindtap="closeMessagesModal">✕</view>
+      </view>
+      <scroll-view scroll-y class="sheet-scroll">
+        <view class="sheet-inner">
+          <view wx:for="{{activeMsgBuddy.quickMessages}}" wx:key="id" class="sub-item-card">
+            <view class="sub-item-top">
+              <text class="sub-author">{{item.sender}}</text>
+              <text class="sub-meta">{{item.time}}</text>
+            </view>
+            <text class="sub-content">{{item.text}}</text>
+            <view class="sub-actions">
+              <view class="act-btn act-primary" hover-class="tap-active" data-id="{{item.id}}" bindtap="openEditMessage">✎ 编辑</view>
+              <view class="act-btn act-danger" hover-class="tap-active" data-id="{{item.id}}" bindtap="onDeleteMessage">删除</view>
+            </view>
+          </view>
+          <view wx:if="{{activeMsgBuddy.quickMessages.length === 0}}" class="empty-sub">该搭子暂无频道消息</view>
+        </view>
+      </scroll-view>
+      <view class="sheet-footer">
+        <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="closeMessagesModal">关闭</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 弹窗 4b：编辑单条频道消息 -->
+  <view wx:if="{{editMsgModalVisible}}" class="sheet-mask sheet-mask-top" bindtap="closeEditMsgModal">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view class="sheet-title">编辑频道消息</view>
+        <view class="sheet-close" hover-class="tap-active" bindtap="closeEditMsgModal">✕</view>
+      </view>
+      <view class="sheet-inner">
+        <view class="form-group">
+          <text class="form-label">发送者昵称</text>
+          <input class="form-input" value="{{editMsgSender}}" maxlength="24" bindinput="onEditMsgSender" />
+        </view>
+        <view class="form-group">
+          <text class="form-label">消息内容 *</text>
+          <textarea class="form-textarea" value="{{editMsgText}}" maxlength="160" bindinput="onEditMsgText" />
+        </view>
+      </view>
+      <view class="sheet-footer">
+        <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="closeEditMsgModal">取消</view>
+        <view class="ios-btn ios-btn-primary flex-15" hover-class="tap-active" bindtap="onSaveEditMsg">保存修改</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ==================== 弹窗 5：编辑/新增共鸣泡泡 ==================== -->
+  <view wx:if="{{bubbleModalVisible}}" class="sheet-mask" bindtap="closeBubbleModal">
+    <view class="sheet-panel" catchtap="noop">
+      <view class="sheet-handle-wrap"><view class="sheet-handle"></view></view>
+      <view class="sheet-header">
+        <view class="header-text-wrap">
+          <view class="sheet-title">{{editBubbleId ? '编辑共鸣泡泡' : '新增共鸣泡泡'}}</view>
+          <view class="sheet-subtitle">修改内容、情绪标签与泡泡色调</view>
+        </view>
+        <view class="sheet-close" hover-class="tap-active" bindtap="closeBubbleModal">✕</view>
+      </view>
+
+      <scroll-view scroll-y class="sheet-scroll">
+        <view class="sheet-inner">
+          <view class="form-group">
+            <text class="form-label">话题标签</text>
+            <input class="form-input" value="{{editBubbleTag}}" maxlength="20" placeholder="如：低电量时刻" bindinput="onEditBubbleTag" />
+          </view>
+          <view class="form-group">
+            <text class="form-label">泡泡氛围色</text>
+            <view class="seg-row">
+              <view
+                wx:for="{{bubbleTones}}"
+                wx:key="id"
+                class="seg-btn {{editBubbleTone === item.id ? 'seg-btn-on' : ''}}"
+                data-tone="{{item.id}}"
+                bindtap="onEditBubbleTone"
+              >{{item.label}}</view>
+            </view>
+          </view>
+          <view class="form-group">
+            <text class="form-label">来源显示名</text>
+            <input class="form-input" value="{{editBubbleAuthor}}" maxlength="20" bindinput="onEditBubbleAuthor" />
+          </view>
+          <view class="form-group">
+            <text class="form-label">泡泡正文 *</text>
+            <textarea class="form-textarea" value="{{editBubbleContent}}" maxlength="240" bindinput="onEditBubbleContent" />
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="sheet-footer">
+        <view class="ios-btn ios-btn-ghost flex-1" hover-class="tap-active" bindtap="closeBubbleModal">取消</view>
+        <view class="ios-btn ios-btn-primary flex-15 {{savingBubble ? 'ios-btn-disabled' : ''}}" hover-class="tap-active" bindtap="onSaveBubble">
+          {{savingBubble ? '保存中…' : '保存泡泡'}}
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

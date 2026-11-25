@@ -4,8 +4,18 @@
     <view wx:if="{{user}}" class="liquid-dock account-pill" hover-class="tap-active" bindtap="openProfile">
       <image class="account-avatar" src="{{user.avatarUrl}}" mode="aspectFill" />
       <text class="account-name">{{user.nickname}}</text>
+      <text wx:if="{{user.shortRoleBadge}}" class="role-tag-mini {{user.isSuperAdmin ? 'role-tag-super' : 'role-tag-admin'}}">{{user.shortRoleBadge}}</text>
     </view>
     <view wx:else class="liquid-dock account-pill-guest" hover-class="tap-active" bindtap="openAuthManual">登录</view>
+
+    <view
+      wx:if="{{user && user.isAdmin}}"
+      class="liquid-dock admin-nav-pill {{user.isSuperAdmin ? 'admin-nav-pill-super' : ''}}"
+      hover-class="tap-active"
+      bindtap="openAdminConsole"
+    >
+      <text>{{user.isSuperAdmin ? '👑 超管' : '🛡️ 管理'}}</text>
+    </view>
   </view>
 
   <view class="page-head-block">
